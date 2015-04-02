@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 
 case class Graph(model: JenaModel) extends JavaHelpers {
   lazy val subjects: Stream[Resource] = model.listSubjects.asScala.toStream.map(Resource(_))
-  lazy val toTurtle: String = using(new StringWriter()){ out =>
+  lazy val toTurtle: String = using(new StringWriter) { out =>
     model.write(out, "TTL")
     out.toString
   }

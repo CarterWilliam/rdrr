@@ -3,6 +3,7 @@ package jesc
 import com.hp.hpl.jena.rdf.model.{RDFNode => JenaNode}
 
 abstract class RdfNode {
+  def jena: JenaNode
   def value: String
 }
 

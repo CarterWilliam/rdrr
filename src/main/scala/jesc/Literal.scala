@@ -2,8 +2,8 @@ package jesc
 
 import com.hp.hpl.jena.rdf.model.{ModelFactory, Literal => JenaLiteral}
 
-case class Literal(literal: JenaLiteral) extends RdfNode {
-  override lazy val value = literal.getLanguage
+case class Literal(jena: JenaLiteral) extends RdfNode {
+  override lazy val value = jena.getLanguage
 }
 
 object Literal {
