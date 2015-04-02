@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 
 
 case class Graph(model: JenaModel) {
-  lazy val subjects: Stream[Resource] = model.listSubjects.asScala.toStream.map(Resource)
+  lazy val subjects: Stream[Resource] = model.listSubjects.asScala.toStream.map(Resource(_))
 }
 
 object Graph {
@@ -35,10 +35,20 @@ case class Resource(resource: JenaResource) extends RdfNode {
   override lazy val value = uri
 }
 
+object Resource {
+  def apply(uri: String): Resource =
+    Resource(ModelFactory.createDefaultModel().createResource(uri))
+}
+
 case class Predicate(property: JenaProperty) extends RdfNode {
   lazy val uri = property.getURI
 
   override lazy val value = uri
+}
+
+object Predicate {
+  def apply(uri: String): Predicate =
+    Predicate(ModelFactory.createDefaultModel().createProperty(uri))
 }
 
 case class Literal(literal: JenaLiteral) extends RdfNode {

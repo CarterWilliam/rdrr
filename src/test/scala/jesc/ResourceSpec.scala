@@ -6,13 +6,19 @@ import utilities.TestHelpers
 
 class ResourceSpec extends Specification {
 
+  "Resources" can {
+    "be created from a URI string" in {
+      Resource("http://purl.org/ontology/mo/MusicArtist").value must be equalTo "http://purl.org/ontology/mo/MusicArtist"
+    }
+  }
+
   "Resources" should {
     "exist on a graph object" in new ResourceScope {
       graph.subjects must have size 1
     }
     "have a URI" in new ResourceScope {
       val subject = graph.subjects.head
-      subject.value must be equalTo "https://en.wikipedia.org/wiki/Justin_Bieber"
+      subject.uri must be equalTo "https://en.wikipedia.org/wiki/Justin_Bieber"
     }
     "contain a subset of subject, predicate, object statements from the model" in new ResourceScope {
       val subject = graph.subjects.head
