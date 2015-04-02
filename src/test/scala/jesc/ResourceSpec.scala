@@ -24,6 +24,11 @@ class ResourceSpec extends Specification {
       val subject = graph.subjects.head
       subject.statements must haveSize (2)
     }
+    "have a notion of equality" in new ResourceScope {
+      val subject = graph.subjects.head
+      val copy = Resource("https://en.wikipedia.org/wiki/Justin_Bieber")
+      subject must be equalTo copy
+    }
   }
 
 }
