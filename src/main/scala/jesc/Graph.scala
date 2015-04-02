@@ -1,4 +1,4 @@
-package jess
+package jesc
 
 import java.io.StringReader
 
@@ -31,6 +31,7 @@ object Graph {
     Graph(model)
   }
 }
+
 
 case class Resource(resource: JenaResource) {
   lazy val uri = resource.getURI

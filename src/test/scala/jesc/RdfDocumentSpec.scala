@@ -1,4 +1,4 @@
-import jess.Graph
+import jesc.Graph
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
