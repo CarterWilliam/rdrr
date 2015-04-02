@@ -2,14 +2,9 @@ package jesc
 
 import java.io.StringReader
 
+import com.hp.hpl.jena.rdf.model.{ModelFactory, Literal => JenaLiteral, Model => JenaModel, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Statement => JenaStatement}
+
 import scala.collection.JavaConverters._
-import com.hp.hpl.jena.rdf.model.{
-  Model => JenaModel,
-  Resource => JenaResource,
-  Statement => JenaStatement,
-  Property => JenaProperty,
-  RDFNode => JenaNode,
-  ModelFactory }
 
 
 case class Graph(model: JenaModel) {
@@ -33,15 +28,38 @@ object Graph {
 }
 
 
-case class Resource(resource: JenaResource) {
+case class Resource(resource: JenaResource) extends RdfNode {
   lazy val uri = resource.getURI
   lazy val statements: Stream[Statement] = resource.listProperties.asScala.toStream.map(Statement)
+
+  override lazy val value = uri
+}
+
+case class Predicate(property: JenaProperty) extends RdfNode {
+  lazy val uri = property.getURI
+
+  override lazy val value = uri
+}
+
+case class Literal(literal: JenaLiteral) extends RdfNode {
+  override lazy val value = literal.getValue.toString
 }
 
 case class Statement(statement: JenaStatement) {
-  lazy val subject: JenaResource = statement.getSubject
-  lazy val predicate: JenaProperty = statement.getPredicate
-  lazy val `object`: JenaNode = statement.getObject
+  lazy val subject = Resource(statement.getSubject)
+  lazy val predicate = Predicate(statement.getPredicate)
+  lazy val `object` = RdfNode(statement.getObject)
 }
 
-class JessException(message: String) extends Exception(message)
+abstract class RdfNode {
+  def value: String
+}
+
+object RdfNode {
+  def apply(jenaNode: JenaNode) = {
+    if (jenaNode.isLiteral)
+      Literal(jenaNode.asLiteral())
+    else
+      Resource(jenaNode.asResource())
+  }
+}
