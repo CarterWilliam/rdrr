@@ -16,10 +16,20 @@ class StatementSpec extends Specification {
     "have an object resource" in new StatementScope {
       bieberIsAnArtist.`object`.value must be equalTo "http://purl.org/ontology/mo/MusicArtist"
     }
+    "return object as a resource if appropriate" in new StatementScope {
+      bieberIsAnArtist.`object` must be equalTo Resource("http://purl.org/ontology/mo/MusicArtist")
+    }
+    "return object as a literal if appropriate" in new StatementScope {
+      bieberHasNameJustinBieber.`object` must be equalTo Literal("Justin Bieber", "en")
+    }
   }
 }
 
 trait StatementScope extends Scope with TestHelpers {
-  val graph = Graph.parse(getResource("bieber-single-statement.ttl"))
-  val bieberIsAnArtist = graph.subjects.head.statements.head
+  val bieberIsAnArtist: Statement =
+    Graph.parse(getResource("bieber-is-an-artist.ttl")).subjects.head.statements.head
+
+
+  val bieberHasNameJustinBieber: Statement =
+    Graph.parse(getResource("bieber-has-name-justin-bieber.ttl")).subjects.head.statements.head
 }

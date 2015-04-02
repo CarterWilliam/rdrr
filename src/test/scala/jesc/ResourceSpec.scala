@@ -22,7 +22,7 @@ class ResourceSpec extends Specification {
     }
     "contain a subset of subject, predicate, object statements from the model" in new ResourceScope {
       val subject = graph.subjects.head
-      subject.statements must haveSize (2)
+      subject.statements must have size 3
     }
     "have a notion of equality" in new ResourceScope {
       val subject = graph.subjects.head
