@@ -6,77 +6,62 @@ import scala.io.Source
 
 class TurtleSerialiser extends GraphSerialiser {
 
-  override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
-
-  def fromTurtle(lines: Stream[String]) = {
-    val PrefixLine = """^@prefix (.*): (.*) .$""".r
-
-    def triplesFromLines(lines: Stream[String],
-                         prefixes: Map[String, String] = Map.empty,
-                         unfinishedTriple: UnfinishedTriple = Empty): Stream[Triple] = {
-
-      println("triplesFromLines")
-      println(lines)
-      println(prefixes)
-
-      lines match {
-        case PrefixLine(prefix, uri) #:: rest => {
-          println(s"Prefix found: $prefix, $uri")
-          triplesFromLines(rest, prefixes + (prefix -> uri), unfinishedTriple)
-        }
-        case line #:: rest if line.isEmpty => {
-          println("empty line. continue...")
-          triplesFromLines(rest, prefixes, unfinishedTriple)
-        }
-        case line #:: rest => {
-          val (nextResource, otherResources) = line.trim.span(!_.isWhitespace)
-          unfinishedTriple match {
-            case Empty => 
-              triplesFromLines(otherResources #:: rest, prefixes, Subject(resourceFromTurtle(nextResource, prefixes)))
-            case Subject(subject) => 
-              triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicateFromTurtle(nextResource, prefixes)))
-            case SubjectAndPredicate(subject, predicate) => {
-              nextResource match {
-                case UriResource(_) => {
-                  println("Found a triple!")
-                  println(subject)
-                  println(predicate)
-                  Triple(subject, predicate, resourceFromTurtle(nextResource, prefixes)) #:: triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
-                }
-                case PrefixedResource(_, _) => {
-                  println("Found a triple!")
-                  println(subject)
-                  println(predicate)
-                  Triple(subject, predicate, resourceFromTurtle(nextResource, prefixes)) #:: triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
-                }
-                case AnotherObjectNext => {
-                  println("Found ','")
-                  triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicate))
-                }
-                case AnotherPredicateNext => {
-                  println("Found ';'")
-                  triplesFromLines(otherResources #:: rest, prefixes, Subject(subject))
-                }
-                case AnotherSubjectNext => {
-                  println("Found '.'")
-                  triplesFromLines(otherResources #:: rest, prefixes, Empty)
-                }
-              }
-            }
-          }
-        }
-        case Stream.Empty => Stream.Empty
-      }
-    }
-    Graph(triplesFromLines(lines))
-  }
-
-  val UriResource = "<(.*)>".r
-  val PrefixedResource = "(.*):(.*)".r
   val AnotherObjectNext = ","
   val AnotherPredicateNext = ";"
   val AnotherSubjectNext = "."
-  private def fromTurtleRepresentation[T <: Node](turtleRepresentation: String, prefixes: Map[String, String])(apply: String => T): T =
+
+  val RdfStandardPredicates: Map[String, Predicate] = Map {
+    "a" -> Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+  }
+
+  override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
+
+  def fromTurtle(lines: Stream[String]) = Graph(triplesFromLines(lines))
+
+  private[this] val PrefixLine = """^@prefix (.*): (.*) .$""".r
+  private[this] def triplesFromLines(lines: Stream[String],
+                       prefixes: Map[String, String] = Map.empty,
+                       unfinishedTriple: UnfinishedTriple = EmptyTriple): Stream[Triple] = lines match {
+
+    case PrefixLine(prefix, uri) #:: rest =>
+      // Add to prefixes and continue.
+      triplesFromLines(rest, prefixes + (prefix -> uri), unfinishedTriple)
+
+    case line #:: rest if line.isEmpty =>
+      // Ignore and continue.
+      triplesFromLines(rest, prefixes, unfinishedTriple)
+
+    case line #:: rest => {
+      // Get next resource in the line. Add triple if subject.
+      val (nextResource, otherResources) = line.trim.span(!_.isWhitespace)
+      unfinishedTriple match {
+        case EmptyTriple =>
+          triplesFromLines(otherResources #:: rest, prefixes, Subject(resourceFromTurtle(nextResource, prefixes)))
+
+        case Subject(subject) =>
+          triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicateFromTurtle(nextResource, prefixes)))
+
+        case SubjectAndPredicate(subject, predicate) => {
+          nextResource match {
+            case AnotherObjectNext =>
+              triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicate))
+            case AnotherPredicateNext =>
+              triplesFromLines(otherResources #:: rest, prefixes, Subject(subject))
+            case AnotherSubjectNext =>
+              triplesFromLines(otherResources #:: rest, prefixes, EmptyTriple)
+            case resourceTurtle =>
+              Triple(subject, predicate, resourceFromTurtle(resourceTurtle, prefixes)) #:: triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
+          }
+        }
+      }
+    }
+      
+    case Stream.Empty => Stream.Empty // done
+  }
+
+  private[this] val UriResource = "<(.*)>".r
+  private[this] val PrefixedResource = "(.*):(.*)".r
+  private[this] def fromTurtleRepresentation[T <: Node](turtleRepresentation: String, prefixes: Map[String, String])(apply: String => T): T =
     turtleRepresentation match {
       case UriResource(uri) => apply(uri)
       case PrefixedResource(prefix, name) => prefixes.collectFirst {
@@ -87,15 +72,12 @@ class TurtleSerialiser extends GraphSerialiser {
       case unmatched => throw new ParseException(s"Turtle representation not recognised by parser: $unmatched")
     }
 
-  private def resourceFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Resource =
+  private[this] def resourceFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Resource =
     fromTurtleRepresentation(turtleRepresentation, prefixes)(Resource)
 
-  private def predicateFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Predicate =
+  private[this] def predicateFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Predicate =
     RdfStandardPredicates.getOrElse(turtleRepresentation, fromTurtleRepresentation(turtleRepresentation, prefixes)(Predicate))
 
-  val RdfStandardPredicates: Map[String, Predicate] = Map {
-    "a" -> Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-  }
 
 
   override def toTurtle(graph: Graph): String = ???
@@ -103,7 +85,7 @@ class TurtleSerialiser extends GraphSerialiser {
 
 case class Prefix(prefix: String, uri: String)
 abstract class UnfinishedTriple
-object Empty extends UnfinishedTriple
+object EmptyTriple extends UnfinishedTriple
 case class Subject(subject: Resource) extends UnfinishedTriple
 case class SubjectAndPredicate(subject: Resource, predicate: Predicate) extends UnfinishedTriple
 
