@@ -1,7 +1,7 @@
 package jesc.immutable
 
 import com.hp.hpl.jena.rdf.model.{Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource}
-import jesc.immutable.serialisers.JenaSerialiser
+import jesc.immutable.marshallers.JenaMarshaller
 import jesc.util.JavaHelpers
 
 
@@ -17,6 +17,6 @@ object Graph extends JavaHelpers {
 
   val Empty = Graph(Stream.Empty)
 
-  val serialiser = new JenaSerialiser
+  val serialiser = new JenaMarshaller
   def parse(turtle: String): Graph = serialiser.fromTurtle(turtle)
 }

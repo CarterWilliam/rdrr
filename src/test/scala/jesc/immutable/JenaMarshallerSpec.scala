@@ -1,19 +1,19 @@
 package jesc.immutable
 
-import jesc.immutable.serialisers.JenaSerialiser
+import jesc.immutable.marshallers.JenaMarshaller
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers
 
-class JenaSerialiserSpec extends Specification {
+class JenaMarshallerSpec extends Specification {
 
-  "The Jena Serialiser" can {
-    "serialise from Turtle format" in new SerialiserScope {
+  "The Jena Marshaller" can {
+    "serialise from Turtle format" in new MarshallerScope {
       val turtle = getResource("bieber.ttl")
       val graph = serialiser.fromTurtle(turtle)
       graph.triples must have size 3
     }
-    "serialise to Turtle format" in new SerialiserScope {
+    "serialise to Turtle format" in new MarshallerScope {
       val graph = Graph.Empty + Triple (
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
@@ -24,6 +24,6 @@ class JenaSerialiserSpec extends Specification {
   }
 }
 
-trait SerialiserScope extends Scope with TestHelpers {
-  val serialiser = new JenaSerialiser()
+trait MarshallerScope extends Scope with TestHelpers {
+  val serialiser = new JenaMarshaller()
 }

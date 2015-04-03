@@ -1,8 +1,8 @@
-package jesc.immutable.serialisers
+package jesc.immutable.marshallers
 
 import jesc.immutable.Graph
 
-trait GraphSerialiser {
+trait GraphMarshaller {
   def fromTurtle(turtle: String): Graph
   def toTurtle(graph: Graph): String
 }

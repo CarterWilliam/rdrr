@@ -1,4 +1,4 @@
-package jesc.immutable.serialisers
+package jesc.immutable.marshallers
 
 import java.io.{StringReader, StringWriter}
 
@@ -9,7 +9,7 @@ import jesc.util.JavaHelpers
 import scala.collection.JavaConverters._
 
 
-class JenaSerialiser extends GraphSerialiser with JavaHelpers {
+class JenaMarshaller extends GraphMarshaller with JavaHelpers {
 
   override def fromTurtle(turtle: String): Graph = closeWhenDone(new StringReader(turtle)) { reader =>
     val model = ModelFactory.createDefaultModel()
