@@ -1,17 +1,13 @@
-package jesc.immutable
+package jesc.immutable.serialisers
 
 import java.io.{StringReader, StringWriter}
 
-import com.hp.hpl.jena.rdf.model.{ModelFactory, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Literal => JenaLiteral, Statement => JenaStatement}
+import com.hp.hpl.jena.rdf.model.{ModelFactory, Literal => JenaLiteral, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Statement => JenaStatement}
+import jesc.immutable._
 import jesc.util.JavaHelpers
 
 import scala.collection.JavaConverters._
 
-
-trait GraphSerialiser {
-  def fromTurtle(turtle: String): Graph
-  def toTurtle(graph: Graph): String
-}
 
 class JenaSerialiser extends GraphSerialiser with JavaHelpers {
 

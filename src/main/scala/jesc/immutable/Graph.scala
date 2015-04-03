@@ -1,6 +1,7 @@
 package jesc.immutable
 
 import com.hp.hpl.jena.rdf.model.{Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource}
+import jesc.immutable.serialisers.JenaSerialiser
 import jesc.util.JavaHelpers
 
 

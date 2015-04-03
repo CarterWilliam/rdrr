@@ -1,5 +1,6 @@
 package jesc.immutable
 
+import jesc.immutable.serialisers.JenaSerialiser
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers
