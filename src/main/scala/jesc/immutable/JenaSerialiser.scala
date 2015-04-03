@@ -15,7 +15,7 @@ trait GraphSerialiser {
 
 class JenaSerialiser extends GraphSerialiser with JavaHelpers {
 
-  override def fromTurtle(turtle: String): Graph = using(new StringReader(turtle)) { reader =>
+  override def fromTurtle(turtle: String): Graph = closeWhenDone(new StringReader(turtle)) { reader =>
     val model = ModelFactory.createDefaultModel()
     model.read(reader, null, "TTL")
     val triples = tripleStreamFromJenaStatements(model.listStatements.asScala.toStream)
@@ -39,7 +39,7 @@ class JenaSerialiser extends GraphSerialiser with JavaHelpers {
   private def literalFromJena(literal: JenaLiteral) = StringLiteral(literal.asLiteral().getValue.toString)
 
 
-  override def toTurtle(graph: Graph): String = using(new StringWriter) { out =>
+  override def toTurtle(graph: Graph): String = {
 
     val jenaModel = ModelFactory.createDefaultModel()
 
@@ -55,12 +55,14 @@ class JenaSerialiser extends GraphSerialiser with JavaHelpers {
       case _ => jenaModel.createLiteral("literal")
     }
 
-    graph.triples.foreach { triple =>
-      jenaModel.add(triple.subject, triple.predicate, triple.`object`)
+    closeWhenDone(new StringWriter) { out =>
+      graph.triples.foreach { triple =>
+        jenaModel.add(triple.subject, triple.predicate, triple.`object`)
+      }
+      jenaModel.write(out, "TTL")
+      out.toString
     }
-    jenaModel.write(out, "TTL")
-    out.toString
-  }
 
+  }
 
 }
