@@ -7,9 +7,9 @@ import jesc.util.JavaHelpers
 
 case class Graph(triples: Stream[Triple]) {
   
-  lazy val subjects: Stream[Resource] = triples.map(_.subject)
+  lazy val subjects: Stream[Resource] = triples.map(_.subject).distinct
 
-  def +(t: Triple): Graph = Graph(t #:: triples)
+  def + (t: Triple): Graph = Graph(t #:: triples)
 
 }
 
@@ -17,6 +17,7 @@ object Graph extends JavaHelpers {
 
   val Empty = Graph(Stream.Empty)
 
-  val serialiser = new JenaMarshaller
-  def parse(turtle: String): Graph = serialiser.fromTurtle(turtle)
+  val marshaller = new JenaMarshaller
+  def parse(turtle: String): Graph = marshaller.fromTurtle(turtle)
+  def toTurtle(graph: Graph): String = marshaller.toTurtle(graph)
 }
