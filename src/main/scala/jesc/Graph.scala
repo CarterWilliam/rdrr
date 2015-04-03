@@ -2,6 +2,7 @@ package jesc
 
 import java.io.{StringWriter, StringReader}
 import com.hp.hpl.jena.rdf.model.{ModelFactory, Model => JenaModel}
+import jesc.util.JavaHelpers
 import scala.collection.JavaConverters._
 
 
@@ -21,10 +22,3 @@ object Graph extends JavaHelpers {
   }
 }
 
-trait JavaHelpers {
-  def using[T <: { def close(): Unit }, R](closable: T)(operation: T => R) = {
-    val result = operation(closable)
-    closable.close()
-    result
-  }
-}
