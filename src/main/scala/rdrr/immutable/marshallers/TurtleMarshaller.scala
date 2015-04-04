@@ -63,10 +63,10 @@ class TurtleMarshaller extends GraphMarshaller {
   }
 
   private[this] def splitResourceString(resourceString: String): (String, String) = {
-    val StringLiteralEtc = "^(\".*\") (.*)$".r
-    val StringLiteralWithLanguageEtc = "^(\".*\"@\\S*) (.*)$".r
-    val ResourceEtc = "^(\\S*) (.*)$".r
-    
+    val StringLiteralEtc = """^(".*") (.*)$""".r
+    val StringLiteralWithLanguageEtc = """^(".*"@\S*) (.*)$""".r
+    val ResourceEtc = """^(\S*) (.*)$""".r
+
     resourceString.trim match {
       case StringLiteralEtc(stringLiteral, etc) => (stringLiteral, etc)
       case StringLiteralWithLanguageEtc(stringLiteral, etc) => (stringLiteral, etc)
@@ -90,15 +90,22 @@ class TurtleMarshaller extends GraphMarshaller {
   }
 
   private[this] def nodeFromTurtle(turtleRepresentation: String, prefixedIris: Map[String, String]): Node = {
-    val StringLiteralWithLanguage = "\"(.*)\"@(.*)".r
-    val SimpleStringLiteral = "\"(.*)\"".r
-    val StringLiteralWithCustomIRI = "\"(.*)\"\\^\\^(.*)".r
+    val StringLiteralWithLanguageMatcher = """^"(.*)"@(.*)$""".r
+    val SimpleStringLiteralMatcher = """^"(.*)"$""".r
+    val StringLiteralWithCustomIRIMatcher = """^"(.*)"\^\^(.*)$""".r
+    val BooleanLiteralMatcher = """^(true|false)$""".r
+    val IntegerLiteralMatcher = """^\+?(-?[0-9]+)$""".r
+    val DecimalLiteralMatcher = """^\+?(-?[0-9]*\.[0-9]+)$""".r
+
 
     turtleRepresentation match {
-      case StringLiteralWithLanguage(string, language) => LanguageStringLiteral(string, language)
-      case SimpleStringLiteral(string) => StringLiteral(string)
-      case StringLiteralWithCustomIRI(string, turtleResource) =>
+      case StringLiteralWithLanguageMatcher(string, language) => LanguageStringLiteral(string, language)
+      case SimpleStringLiteralMatcher(string) => StringLiteral(string)
+      case StringLiteralWithCustomIRIMatcher(string, turtleResource) =>
         NonStandardStringLiteral(string, iriFromTurtleRepresentation(turtleResource, prefixedIris))
+      case BooleanLiteralMatcher(boolean) => BooleanLiteral(boolean.toBoolean)
+      case IntegerLiteralMatcher(integer) => IntegerLiteral(integer.toInt)
+      case DecimalLiteralMatcher(decimal) => DecimalLiteral(decimal.toDouble)
       case _ => Resource(iriFromTurtleRepresentation(turtleRepresentation, prefixedIris))
     }
   }

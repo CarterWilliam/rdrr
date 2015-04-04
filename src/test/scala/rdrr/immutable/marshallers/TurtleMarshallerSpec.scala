@@ -87,6 +87,30 @@ class TurtleMarshallerSpec extends Specification with PrivateMethodTester {
         val literal = marshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"^^<http://www.crazyencodings.co.uk/encoding>", Map.empty)
         literal must be equalTo NonStandardStringLiteral("Justin Bieber", "http://www.crazyencodings.co.uk/encoding")
       }
+      "from a turtle boolean" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("false", Map.empty)
+        literal must be equalTo BooleanLiteral(false)
+      }
+      "from a turtle integer" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("684", Map.empty)
+        literal must be equalTo IntegerLiteral(684)
+      }
+      "from an explicitly positive turtle integer" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("+684", Map.empty)
+        literal must be equalTo IntegerLiteral(684)
+      }
+      "from a negative turtle integer" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("-684", Map.empty)
+        literal must be equalTo IntegerLiteral(-684)
+      }
+      "from a turtle decimal" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("6.84", Map.empty)
+        literal must be equalTo DecimalLiteral(6.84)
+      }
+      "from a negative turtle decimal" in new CreateLiteralsScope {
+        val literal = marshaller invokePrivate nodeFromTurtle("-6.84", Map.empty)
+        literal must be equalTo DecimalLiteral(-6.84)
+      }
     }
 
   }
