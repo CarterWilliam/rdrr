@@ -1,8 +1,8 @@
-package jesc
+package rdrr
 
 import java.io.{StringWriter, StringReader}
 import com.hp.hpl.jena.rdf.model.{ModelFactory, Model => JenaModel}
-import jesc.util.JavaHelpers
+import rdrr.util.JavaHelpers
 import scala.collection.JavaConverters._
 
 

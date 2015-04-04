@@ -1,6 +1,6 @@
-package jesc.immutable.marshallers
+package rdrr.immutable.marshallers
 
-import jesc.immutable._
+import rdrr.immutable._
 
 import scala.io.Source
 
@@ -10,8 +10,8 @@ class TurtleMarshaller extends GraphMarshaller {
   val AnotherPredicateNext = ";"
   val AnotherSubjectNext = "."
 
-  val RdfStandardPredicates: Map[String, Predicate] = Map {
-    "a" -> Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+  val RdfStandardResources: Map[String, String] = Map {
+    "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
   }
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
@@ -36,10 +36,13 @@ class TurtleMarshaller extends GraphMarshaller {
       val (nextResource, otherResources) = splitResourceString(line)
       unfinishedTriple match {
         case EmptyTriple =>
-          triplesFromLines(otherResources #:: rest, prefixes, Subject(resourceFromTurtle(nextResource, prefixes)))
+          val unfinishedTriple = Subject(Resource(iriFromTurtleRepresentation(nextResource, prefixes)))
+          triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
 
-        case Subject(subject) =>
-          triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicateFromTurtle(nextResource, prefixes)))
+        case Subject(subject) => {
+          val unfinishedTriple = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(nextResource, prefixes)))
+          triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
+        }
 
         case SubjectAndPredicate(subject, predicate) => {
           nextResource match {
@@ -72,39 +75,37 @@ class TurtleMarshaller extends GraphMarshaller {
     }
   }
 
-  private[this] def fromTurtleRepresentation[T <: Node](turtleRepresentation: String, prefixes: Map[String, String])(apply: String => T): T = {
+  private[this] def iriFromTurtleRepresentation(turtleRepresentation: String, prefixedIris: Map[String, String]): String = {
     val UriResource = "<(.*)>".r
     val PrefixedResource = "(.*):(.*)".r
 
     turtleRepresentation match {
-      case UriResource(uri) => apply(uri)
-      case PrefixedResource(prefix, name) => prefixes.collectFirst {
-        case (px, uri) if prefix == px => apply(uri + name)
-      }.getOrElse {
-        throw new ParseException(s"No such prefix in the document: $prefix")
+      case rdfShorthand if RdfStandardResources.contains(rdfShorthand) => RdfStandardResources(rdfShorthand)
+      case UriResource(uri) => uri
+      case PrefixedResource(prefix, name) => prefixedIris.get(prefix).map(_ + name).getOrElse {
+        throw new ParseException(s"Resource does not have given prefix defined in the document: $prefix")
       }
-      case unmatched => throw new ParseException(s"Turtle representation not recognised by parser: $unmatched")
+      case unmatched => throw new ParseException(s"turtle representation not in a form understood by the parser: $unmatched")
     }
   }
 
-  private[this] def resourceFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Resource =
-    fromTurtleRepresentation(turtleRepresentation, prefixes)(Resource)
-
-  private[this] def predicateFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Predicate =
-    RdfStandardPredicates.getOrElse(turtleRepresentation, fromTurtleRepresentation(turtleRepresentation, prefixes)(Predicate))
-
-  private[this] def nodeFromTurtle(turtleRepresentation: String, prefixes: Map[String, String]): Node = {
+  private[this] def nodeFromTurtle(turtleRepresentation: String, prefixedIris: Map[String, String]): Node = {
     val StringLiteralWithLanguage = "\"(.*)\"@(.*)".r
     val SimpleStringLiteral = "\"(.*)\"".r
+    val StringLiteralWithCustomIRI = "\"(.*)\"\\^\\^(.*)".r
 
     turtleRepresentation match {
-      case StringLiteralWithLanguage(string, language) => StringLiteral(string, language)
+      case StringLiteralWithLanguage(string, language) => LanguageStringLiteral(string, language)
       case SimpleStringLiteral(string) => StringLiteral(string)
-      case _ => resourceFromTurtle(turtleRepresentation, prefixes)
+      case StringLiteralWithCustomIRI(string, turtleResource) =>
+        NonStandardStringLiteral(string, iriFromTurtleRepresentation(turtleResource, prefixedIris))
+      case _ => Resource(iriFromTurtleRepresentation(turtleRepresentation, prefixedIris))
     }
   }
 
-  override def toTurtle(graph: Graph): String = ???
+  override def toTurtle(graph: Graph): String = graph.subjects.foldLeft("") { (out, subject) =>
+    out + s"<${subject.uri}>"
+  }
 
 }
 

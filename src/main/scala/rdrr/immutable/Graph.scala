@@ -1,8 +1,8 @@
-package jesc.immutable
+package rdrr.immutable
 
 import com.hp.hpl.jena.rdf.model.{Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource}
-import jesc.immutable.marshallers.JenaMarshaller
-import jesc.util.JavaHelpers
+import rdrr.immutable.marshallers.JenaMarshaller
+import rdrr.util.JavaHelpers
 
 
 case class Graph(triples: Stream[Triple]) {

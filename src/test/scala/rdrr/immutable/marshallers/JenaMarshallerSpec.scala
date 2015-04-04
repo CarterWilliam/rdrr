@@ -1,6 +1,6 @@
-package jesc.immutable.marshallers
+package rdrr.immutable.marshallers
 
-import jesc.immutable._
+import rdrr.immutable._
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers

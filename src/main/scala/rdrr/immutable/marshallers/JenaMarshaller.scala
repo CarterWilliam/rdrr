@@ -1,10 +1,10 @@
-package jesc.immutable.marshallers
+package rdrr.immutable.marshallers
 
 import java.io.{StringReader, StringWriter}
 
 import com.hp.hpl.jena.rdf.model.{ModelFactory, Literal => JenaLiteral, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Statement => JenaStatement}
-import jesc.immutable._
-import jesc.util.JavaHelpers
+import rdrr.immutable._
+import rdrr.util.JavaHelpers
 
 import scala.collection.JavaConverters._
 

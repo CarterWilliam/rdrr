@@ -1,4 +1,4 @@
-package jesc.util
+package rdrr.util
 
 trait JavaHelpers {
   def closeWhenDone[T <: { def close(): Unit }, R](closable: T)(operation: T => R) = {

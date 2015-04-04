@@ -1,4 +1,4 @@
-package jesc
+package rdrr
 
 import com.hp.hpl.jena.rdf.model.{ModelFactory, Resource => JenaResource}
 import scala.collection.JavaConverters._

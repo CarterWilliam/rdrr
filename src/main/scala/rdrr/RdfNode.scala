@@ -1,4 +1,4 @@
-package jesc
+package rdrr
 
 import com.hp.hpl.jena.rdf.model.{RDFNode => JenaNode}
 

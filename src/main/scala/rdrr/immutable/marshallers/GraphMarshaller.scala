@@ -1,6 +1,6 @@
-package jesc.immutable.marshallers
+package rdrr.immutable.marshallers
 
-import jesc.immutable.Graph
+import rdrr.immutable.Graph
 
 trait GraphMarshaller {
   def fromTurtle(turtle: String): Graph

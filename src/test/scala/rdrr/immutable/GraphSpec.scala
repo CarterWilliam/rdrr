@@ -1,4 +1,4 @@
-package jesc.immutable
+package rdrr.immutable
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

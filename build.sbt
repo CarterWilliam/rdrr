@@ -1,4 +1,4 @@
-name := "jesc"
+name := "rdrr"
 
 version := "1.0"
 
