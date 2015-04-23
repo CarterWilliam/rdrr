@@ -17,13 +17,22 @@ class GraphSpec extends Specification {
     }
     "be able to be queried for specific triples" in new GraphScope {
       val graph = Graph(JustinBieberIsAnArtist)
-      graph.contains(Triple(JustinBieber, a, Artist)) must beTrue
+      graph.contains(JustinBieber, a, Artist) must beTrue
       graph.contains(JustinBieberHasAName) must beFalse
     }
     "allow filtering" in {
       "generically" in new GraphScope {
-        val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
-        graph.filter(_.predicate == a).triples must have size 1
+        val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
+        val knownByCatriona = graph.filter { triple =>
+          graph.contains(Catriona, knows, triple.subject)
+        }
+        knownByCatriona.triples.head must be equalTo JustinBieberIsAnArtist
+      }
+      "with optional subject, predicate, objects" in new GraphScope {
+        val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
+        val aboutCatriona = graph.filter(subject = Some(Catriona))
+        aboutCatriona.triples.head must be equalTo CatrionaKnowsJustin
+
       }
       "with partial functions that transform the data" in new GraphScope {
         val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
