@@ -10,8 +10,13 @@ case class Graph(triples: Seq[Triple]) {
 
   def + (∆ : Triple): Graph = Graph(triples :+ ∆)
 
+  def contains(∆ : Triple): Boolean = triples.contains(∆)
+
   def filter(constraint: Triple => Boolean) =
     Graph(triples.filter(constraint))
+
+  def collect[T](partialFunction: PartialFunction[Triple, T]): Seq[T] =
+    triples.collect(partialFunction)
 }
 
 object Graph extends JavaHelpers {

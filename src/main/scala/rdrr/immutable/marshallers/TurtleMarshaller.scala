@@ -117,7 +117,8 @@ class TurtleMarshaller extends GraphMarshaller {
 }
 
 case class Prefix(prefix: String, uri: String)
-abstract class UnfinishedTriple
+
+sealed abstract class UnfinishedTriple
 object EmptyTriple extends UnfinishedTriple
 case class Subject(subject: Resource) extends UnfinishedTriple
 case class SubjectAndPredicate(subject: Resource, predicate: Predicate) extends UnfinishedTriple
