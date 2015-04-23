@@ -1,20 +1,22 @@
 package rdrr.immutable
 
-import com.hp.hpl.jena.rdf.model.{Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource}
 import rdrr.immutable.marshallers.JenaMarshaller
 import rdrr.util.JavaHelpers
 
 
-case class Graph(triples: Stream[Triple]) {
-  
-  lazy val subjects: Stream[Resource] = triples.map(_.subject).distinct
+case class Graph(triples: Seq[Triple]) {
 
-  def + (t: Triple): Graph = Graph(t #:: triples)
+  lazy val subjects: Seq[Resource] = triples.map(_.subject).distinct
 
+  def + (∆ : Triple): Graph = Graph(triples :+ ∆)
+
+  def filter(constraint: Triple => Boolean) =
+    Graph(triples.filter(constraint))
 }
 
 object Graph extends JavaHelpers {
 
+  def apply(firstTriple: Triple, moreTriples: Triple*): Graph = Graph(firstTriple +: moreTriples)
   val Empty = Graph(Stream.Empty)
 
   val marshaller = new JenaMarshaller

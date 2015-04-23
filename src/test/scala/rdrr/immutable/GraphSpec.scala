@@ -7,16 +7,17 @@ class GraphSpec extends Specification {
 
   "A Graph" should {
     "have a list of subject, predicate object statements" in new GraphScope {
-      val graph = Graph(Stream(
-        JustinBieberIsAnArtist ) )
+      val graph = Graph(JustinBieberIsAnArtist)
       graph.triples must have size 1
     }
     "have a list of distinct subjects" in new GraphScope {
-      val graph = Graph(Stream(
-        JustinBieberIsAnArtist,
-        JustinBieberHasAName ) )
+      val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
       graph.triples must have size 2
       graph.subjects must have size 1
+    }
+    "allow filtering" in new GraphScope {
+      val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
+      graph.filter(_.predicate == a).triples must have size 1
     }
   }
 }

@@ -111,7 +111,7 @@ class TurtleMarshaller extends GraphMarshaller {
   }
 
   override def toTurtle(graph: Graph): String = graph.subjects.foldLeft("") { (out, subject) =>
-    out + s"<${subject.uri}>"
+    ???
   }
 
 }
