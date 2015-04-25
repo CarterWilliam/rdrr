@@ -2,6 +2,8 @@ name := "rdrr"
 
 version := "1.0"
 
+organization := "com.github.williamcarter"
+
 scalaVersion := "2.11.6"
 
 resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"

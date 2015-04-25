@@ -18,7 +18,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromLines(lines))
 
-  private[this] val PrefixLine = """^@prefix (.*): (.*) .$""".r
+  private[this] val PrefixLine = """^@prefix (.*): <(.*)>\s*.$""".r
   private[this] def triplesFromLines(lines: Stream[String],
                        prefixes: Map[String, String] = Map.empty,
                        partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = lines match {
