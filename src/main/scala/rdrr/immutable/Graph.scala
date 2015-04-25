@@ -2,6 +2,7 @@ package rdrr.immutable
 
 import rdrr.immutable.marshallers.{TurtleMarshaller, JenaTurtleMarshaller}
 
+case class Triple(subject: Resource, predicate: Predicate, `object`: Node)
 
 class Graph(triples: Seq[Triple]) extends Seq[Triple] {
 
@@ -18,7 +19,7 @@ class Graph(triples: Seq[Triple]) extends Seq[Triple] {
     }
   }
 
-  override def length: Int = triples.length
+  override lazy val length: Int = triples.length
   override def apply(index: Int): Triple = triples(index)
   override def iterator: Iterator[Triple] = triples.iterator
 }

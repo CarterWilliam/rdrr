@@ -1,19 +1,37 @@
 package rdrr.immutable
 
 
-case class Triple(subject: Resource, predicate: Predicate, `object`: Node)
+sealed abstract class Node {
+  def as[SubType](implicit converter: Node => SubType): SubType = converter(this)
+}
 
-abstract class Node
+case class WrongNodeTypeException(message: String) extends Exception(message)
+
 
 case class Resource(uri: String) extends Node
 
-case class Predicate(uri: String) extends Node
+object Resource {
+  implicit def fromNode(node: Node): Resource = node match {
+    case resource: Resource => resource
+    case somethingElse => throw new WrongNodeTypeException(s"Expected a Resource Node but got $somethingElse")
+  }
+}
+
+
+case class Predicate(uri: String)
 
 
 abstract class Literal extends Node {
   def value: Any
   def datatype: String
   def asString: String = value.toString
+}
+
+object Literal {
+  implicit def fromNode(node: Node): Literal = node match {
+    case literal: Literal => literal
+    case somethingElse => throw new WrongNodeTypeException(s"Expected a Resource Node but got $somethingElse")
+  }
 }
 
 case class StringLiteral(value: String) extends Literal {
