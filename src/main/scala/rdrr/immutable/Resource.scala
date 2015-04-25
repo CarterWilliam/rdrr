@@ -30,17 +30,20 @@ abstract class Literal extends Node {
 object Literal {
   implicit def fromNode(node: Node): Literal = node match {
     case literal: Literal => literal
-    case somethingElse => throw new WrongNodeTypeException(s"Expected a Resource Node but got $somethingElse")
+    case somethingElse => throw new WrongNodeTypeException(s"Expected a Literal Node but got $somethingElse")
   }
 }
 
-case class StringLiteral(value: String) extends Literal {
+abstract class StringLiteral extends Literal {
+  def value: String
+}
+case class StandardStringLiteral(value: String) extends StringLiteral {
   val datatype = "http://www.w3.org/2001/XMLSchema#string"
 }
-case class LanguageStringLiteral(value: String, language: String) extends Literal {
+case class LanguageStringLiteral(value: String, language: String) extends StringLiteral {
   val datatype = "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"
 }
-case class NonStandardStringLiteral(value: String, datatype: String) extends Literal
+case class NonStandardStringLiteral(value: String, datatype: String) extends StringLiteral
 
 case class BooleanLiteral(value: Boolean) extends Literal {
   val datatype = "http://www.w3.org/TR/xmlschema-2/#boolean"

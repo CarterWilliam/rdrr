@@ -77,7 +77,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
     "create literals" in {
       "from a turtle string without a language" in new CreateLiteralsScope {
         val literal = marshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"", Map.empty)
-        literal must be equalTo StringLiteral("Justin Bieber")
+        literal must be equalTo StandardStringLiteral("Justin Bieber")
       }
       "from a turtle string with a language" in new CreateLiteralsScope {
         val literal = marshaller invokePrivate nodeFromTurtle("\"Justine Biebere\"@fr", Map.empty)

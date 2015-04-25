@@ -100,7 +100,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
     turtleRepresentation match {
       case StringLiteralWithLanguageMatcher(string, language) => LanguageStringLiteral(string, language)
-      case SimpleStringLiteralMatcher(string) => StringLiteral(string)
+      case SimpleStringLiteralMatcher(string) => StandardStringLiteral(string)
       case StringLiteralWithCustomIRIMatcher(string, turtleResource) =>
         NonStandardStringLiteral(string, iriFromTurtleRepresentation(turtleResource, prefixedIris))
       case BooleanLiteralMatcher(boolean) => BooleanLiteral(boolean.toBoolean)

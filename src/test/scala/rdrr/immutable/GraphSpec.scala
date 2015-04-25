@@ -54,6 +54,6 @@ trait GraphScope extends Scope {
   val knows = Predicate("http://xmlns.com/foaf/spec/#term_knows")
 
   val JustinBieberIsAnArtist = Triple(JustinBieber, a, Artist)
-  val JustinBieberHasAName = Triple(JustinBieber, name, StringLiteral("Justin Bieber"))
+  val JustinBieberHasAName = Triple(JustinBieber, name, StandardStringLiteral("Justin Bieber"))
   val CatrionaKnowsJustin = Triple(Catriona, knows, JustinBieber)
 }

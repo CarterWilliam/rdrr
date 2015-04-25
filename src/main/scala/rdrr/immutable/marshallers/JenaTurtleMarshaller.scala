@@ -32,7 +32,7 @@ class JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
     case literal if literal.isLiteral => literalFromJena(literal.asLiteral())
     case resource => Resource(resource.asResource.getURI)
   }
-  private def literalFromJena(literal: JenaLiteral) = StringLiteral(literal.asLiteral().getValue.toString)
+  private def literalFromJena(literal: JenaLiteral) = StandardStringLiteral(literal.asLiteral().getValue.toString)
 
 
   override def toTurtle(graph: Graph): String = {

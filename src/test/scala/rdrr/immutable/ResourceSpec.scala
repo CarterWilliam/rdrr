@@ -10,11 +10,11 @@ class ResourceSpec extends Specification {
       node.as[Resource] must be equalTo Resource("iri")
     }
     "be castable to a literal object" in {
-      val node: Node = StringLiteral("string")
+      val node: Node = StandardStringLiteral("string")
       node.as[Literal].asString must be equalTo "string"
     }
     "throw an excpetion if cast to the wrong type" in {
-      val node: Node = StringLiteral("string")
+      val node: Node = StandardStringLiteral("string")
       node.as[Resource] must throwA[WrongNodeTypeException]
     }
   }
