@@ -6,24 +6,24 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers
 
-class TurtleMarshallerSpec extends Specification with PrivateMethodTester {
+class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
 
   "The Turtle Marshaller" can {
     "marshal from" in {
-      "triples with Resources from Turtle" in new TurtleMarshallerScope {
+      "triples with Resources from Turtle" in new RdrrTurtleMarshallerScope {
         val turtle = getResource("bieber-is-an-artist.ttl")
         val graph = marshaller.fromTurtle(turtle)
         graph.triples must have size 1
       }
 
-      "triples with resources and literals from Turtle" in new TurtleMarshallerScope {
+      "triples with resources and literals from Turtle" in new RdrrTurtleMarshallerScope {
         val turtle = getResource("bieber.ttl")
         val graph = marshaller.fromTurtle(turtle)
         graph.triples must have size 3
       }
     }
 
-    "marshall to Turtle" in new TurtleMarshallerScope {
+    "marshall to Turtle" in new RdrrTurtleMarshallerScope {
       val graph = Graph.Empty + Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
@@ -116,22 +116,19 @@ class TurtleMarshallerSpec extends Specification with PrivateMethodTester {
   }
 }
 
-trait TurtleMarshallerScope extends Scope with TestHelpers {
-  val marshaller = new TurtleMarshaller()
+trait RdrrTurtleMarshallerScope extends Scope with TestHelpers {
+  val marshaller = new RdrrTurtleMarshaller()
 }
 
-trait IriExtractScope extends Scope with PrivateMethodTester {
-  val marshaller = new TurtleMarshaller()
+trait IriExtractScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
   val iriFromTurtleRepresentation = PrivateMethod[String]('iriFromTurtleRepresentation)
 }
 
-trait CreateLiteralsScope extends Scope with PrivateMethodTester {
-  val marshaller = new TurtleMarshaller()
+trait CreateLiteralsScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
   val nodeFromTurtle = PrivateMethod[Node]('nodeFromTurtle)
 }
 
-trait SplitResourceStringScope extends Scope with PrivateMethodTester {
-  val marshaller = new TurtleMarshaller()
+trait SplitResourceStringScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
   type Tup2 = (String, String)
   val splitResourceString = PrivateMethod[Tup2]('splitResourceString)
 }

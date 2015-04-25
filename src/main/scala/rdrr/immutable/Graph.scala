@@ -1,7 +1,6 @@
 package rdrr.immutable
 
-import rdrr.immutable.marshallers.JenaMarshaller
-import rdrr.util.JavaHelpers
+import rdrr.immutable.marshallers.{TurtleMarshaller, JenaTurtleMarshaller}
 
 
 case class Graph(triples: Seq[Triple]) {
@@ -24,12 +23,12 @@ case class Graph(triples: Seq[Triple]) {
   def collect[T](transform: PartialFunction[Triple, T]): Seq[T] = triples collect transform
 }
 
-object Graph extends JavaHelpers {
+object Graph {
 
   def apply(first: Triple, rest: Triple*): Graph = Graph(first +: rest)
   val Empty = Graph(Stream.Empty)
 
-  val marshaller = new JenaMarshaller
+  val marshaller: TurtleMarshaller = new JenaTurtleMarshaller
   def parse(turtle: String): Graph = marshaller.fromTurtle(turtle)
   def toTurtle(graph: Graph): String = marshaller.toTurtle(graph)
 }

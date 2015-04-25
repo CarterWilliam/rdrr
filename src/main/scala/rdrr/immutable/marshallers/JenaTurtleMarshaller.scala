@@ -9,7 +9,7 @@ import rdrr.util.JavaHelpers
 import scala.collection.JavaConverters._
 
 
-class JenaMarshaller extends GraphMarshaller with JavaHelpers {
+class JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
 
   override def fromTurtle(turtle: String): Graph = closeWhenDone(new StringReader(turtle)) { reader =>
     val model = ModelFactory.createDefaultModel()

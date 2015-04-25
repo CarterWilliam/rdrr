@@ -5,15 +5,15 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers
 
-class JenaMarshallerSpec extends Specification {
+class JenaTurtleMarshallerSpec extends Specification {
 
   "The Jena Marshaller" can {
-    "serialise from Turtle format" in new JenaMarshallerScope {
+    "serialise from Turtle format" in new JenaTurtleMarshallerScope {
       val turtle = getResource("bieber.ttl")
       val graph = serialiser.fromTurtle(turtle)
       graph.triples must have size 3
     }
-    "serialise to Turtle format" in new JenaMarshallerScope {
+    "serialise to Turtle format" in new JenaTurtleMarshallerScope {
       val graph = Graph.Empty + Triple (
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
@@ -24,6 +24,6 @@ class JenaMarshallerSpec extends Specification {
   }
 }
 
-trait JenaMarshallerScope extends Scope with TestHelpers {
-  val serialiser = new JenaMarshaller()
+trait JenaTurtleMarshallerScope extends Scope with TestHelpers {
+  val serialiser = new JenaTurtleMarshaller()
 }

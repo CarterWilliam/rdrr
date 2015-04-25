@@ -10,9 +10,11 @@ case class Resource(uri: String) extends Node
 case class Predicate(uri: String) extends Node
 
 abstract class Literal extends Node {
-  def value: String
+  def value: Any
   def datatype: String
+  def asString: String = value.toString
 }
+
 
 case class StringLiteral(value: String) extends Literal {
   val datatype = "http://www.w3.org/2001/XMLSchema#string"
@@ -22,19 +24,14 @@ case class LanguageStringLiteral(value: String, language: String) extends Litera
 }
 case class NonStandardStringLiteral(value: String, datatype: String) extends Literal
 
-
-case class BooleanLiteral(boolean: Boolean) extends Literal {
-  override val value = boolean.toString
-  override val datatype = "http://www.w3.org/TR/xmlschema-2/#boolean"
+case class BooleanLiteral(value: Boolean) extends Literal {
+  val datatype = "http://www.w3.org/TR/xmlschema-2/#boolean"
 }
 
-
-case class IntegerLiteral(integer: Int) extends Literal {
-  override val value = integer.toString
-  override val datatype = "http://www.w3.org/2001/XMLSchema#integer"
+case class IntegerLiteral(value: Int) extends Literal {
+  val datatype = "http://www.w3.org/2001/XMLSchema#integer"
 }
 
-case class DecimalLiteral(decimal: Double) extends Literal {
-  override val value = decimal.toString
-  override val datatype = "http://www.w3.org/2001/XMLSchema#decimal"
+case class DecimalLiteral(value: Double) extends Literal {
+  val datatype = "http://www.w3.org/2001/XMLSchema#decimal"
 }
