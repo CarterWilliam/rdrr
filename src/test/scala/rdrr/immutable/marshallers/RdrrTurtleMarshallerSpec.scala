@@ -13,21 +13,21 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
       "triples with Resources from Turtle" in new RdrrTurtleMarshallerScope {
         val turtle = getResource("bieber-is-an-artist.ttl")
         val graph = marshaller.fromTurtle(turtle)
-        graph.triples must have size 1
+        graph must have size 1
       }
 
       "triples with resources and literals from Turtle" in new RdrrTurtleMarshallerScope {
         val turtle = getResource("bieber.ttl")
         val graph = marshaller.fromTurtle(turtle)
-        graph.triples must have size 3
+        graph must have size 3
       }
     }
 
     "marshall to Turtle" in new RdrrTurtleMarshallerScope {
-      val graph = Graph.Empty + Triple(
+      val graph = Graph(Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-        Resource("http://purl.org/ontology/mo/MusicArtist") )
+        Resource("http://purl.org/ontology/mo/MusicArtist") ) )
 
       val expected = "<https://en.wikipedia.org/wiki/Justin_Bieber> a <http://purl.org/ontology/mo/MusicArtist> ."
       marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace

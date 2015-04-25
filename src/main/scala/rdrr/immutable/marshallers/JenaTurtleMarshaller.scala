@@ -52,7 +52,7 @@ class JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
     }
 
     closeWhenDone(new StringWriter) { out =>
-      graph.triples.foreach { triple =>
+      graph.foreach { triple =>
         jenaModel.add(triple.subject, triple.predicate, triple.`object`)
       }
       jenaModel.write(out, "TTL")

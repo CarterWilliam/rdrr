@@ -8,11 +8,11 @@ class GraphSpec extends Specification {
   "A Graph" should {
     "have a list of subject, predicate object statements" in new GraphScope {
       val graph = Graph(JustinBieberIsAnArtist)
-      graph.triples must have size 1
+      graph must have size 1
     }
     "have a list of distinct subjects" in new GraphScope {
       val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
-      graph.triples must have size 2
+      graph must have size 2
       graph.subjects must have size 1
     }
     "be able to be queried for specific triples" in new GraphScope {
@@ -26,12 +26,12 @@ class GraphSpec extends Specification {
         val knownByCatriona = graph.filter { triple =>
           graph.contains(Catriona, knows, triple.subject)
         }
-        knownByCatriona.triples.head must be equalTo JustinBieberIsAnArtist
+        knownByCatriona.head must be equalTo JustinBieberIsAnArtist
       }
       "with optional subject, predicate, objects" in new GraphScope {
         val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
         val aboutCatriona = graph.filter(subject = Some(Catriona))
-        aboutCatriona.triples.head must be equalTo CatrionaKnowsJustin
+        aboutCatriona.head must be equalTo CatrionaKnowsJustin
 
       }
       "with partial functions that transform the data" in new GraphScope {
