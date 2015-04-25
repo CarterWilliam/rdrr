@@ -9,12 +9,12 @@ case class Resource(uri: String) extends Node
 
 case class Predicate(uri: String) extends Node
 
+
 abstract class Literal extends Node {
   def value: Any
   def datatype: String
   def asString: String = value.toString
 }
-
 
 case class StringLiteral(value: String) extends Literal {
   val datatype = "http://www.w3.org/2001/XMLSchema#string"
