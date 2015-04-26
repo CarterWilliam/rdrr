@@ -16,44 +16,37 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
 
-  def fromTurtle(lines: Stream[String]) = Graph(triplesFromLines(lines))
+  def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
-  private[this] val PrefixLine = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
-  private[this] def triplesFromLines(lines: Stream[String],
+  private[this] val Prefix = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
+  private[this] def triplesFromEntities(entities: Stream[String],
                        prefixes: Map[String, String] = Map.empty,
-                       partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = lines match {
+                       partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = entities match {
 
-    case PrefixLine(prefix, uri) #:: rest =>
+    case Prefix(prefix, uri) #:: rest =>
       // Add to prefixes and continue.
-      triplesFromLines(rest, prefixes + (prefix -> uri), partialTriple)
+      triplesFromEntities(rest, prefixes + (prefix -> uri), partialTriple)
 
-    case line #:: rest if line.isEmpty =>
-      // Ignore and continue.
-      triplesFromLines(rest, prefixes, partialTriple)
-
-    case line #:: rest => {
-      // Get next resource in the line. Add triple if subject.
-      val (nextResource, otherResources) = splitResourceString(line)
+    case entity #:: rest => {
       partialTriple match {
         case EmptyTriple =>
-          val unfinishedTriple = Subject(Resource(iriFromTurtleRepresentation(nextResource, prefixes)))
-          triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
+          val unfinishedTriple = Subject(Resource(iriFromTurtleRepresentation(entity, prefixes)))
+          triplesFromEntities(rest, prefixes, unfinishedTriple)
 
-        case Subject(subject) => {
-          val unfinishedTriple = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(nextResource, prefixes)))
-          triplesFromLines(otherResources #:: rest, prefixes, unfinishedTriple)
-        }
+        case Subject(subject) =>
+          val unfinishedTriple = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(entity, prefixes)))
+          triplesFromEntities(rest, prefixes, unfinishedTriple)
 
         case SubjectAndPredicate(subject, predicate) => {
-          nextResource match {
+          entity match {
             case AnotherObjectNext =>
-              triplesFromLines(otherResources #:: rest, prefixes, SubjectAndPredicate(subject, predicate))
+              triplesFromEntities(rest, prefixes, SubjectAndPredicate(subject, predicate))
             case AnotherPredicateNext =>
-              triplesFromLines(otherResources #:: rest, prefixes, Subject(subject))
+              triplesFromEntities(rest, prefixes, Subject(subject))
             case AnotherSubjectNext =>
-              triplesFromLines(otherResources #:: rest, prefixes, EmptyTriple)
+              triplesFromEntities(rest, prefixes, EmptyTriple)
             case resourceTurtle =>
-              Triple(subject, predicate, nodeFromTurtle(resourceTurtle, prefixes)) #:: triplesFromLines(otherResources #:: rest, prefixes, partialTriple)
+              Triple(subject, predicate, nodeFromTurtle(resourceTurtle, prefixes)) #:: triplesFromEntities(rest, prefixes, partialTriple)
           }
         }
       }
@@ -62,14 +55,34 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
     case Stream.Empty => Stream.Empty // done
   }
 
-  private[this] def splitResourceString(resourceString: String): (String, String) = {
-    val StringLiteralEtc = """^("[^"]*"[^\s;,.]*)\s*(.*)$""".r
-    val ResourceEtc = """^(\S*)\s+(.*)$""".r
 
-    resourceString.trim match {
-      case StringLiteralEtc(stringLiteral, etc) => (stringLiteral, etc)
-      case ResourceEtc(resource, etc) => (resource, etc)
-      case lastResource => (lastResource, "")
+  private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
+    val PrefixLine = """^\s*(@(?:base|prefix)\s+.*\.)\s*$""".r
+    val PunctuationEtc = """^\s*([,;.])\s*(.*)$""".r
+    val StringLiteralEtc = """^\s*("[^"]*"[^\s;,.]*)\s*(.*)$""".r
+    val ResourceEtc = """^\s*(\S*[^\s,;.])\s*(.*)$""".r
+
+    lines match {
+
+      case line #:: moreLines if line.isEmpty =>
+        entitiesFromLines(moreLines)
+
+      case PrefixLine(prefixLine) #:: moreLines =>
+        prefixLine #:: entitiesFromLines(moreLines)
+
+      case PunctuationEtc(punctuation, etc) #:: moreLines =>
+        punctuation #:: entitiesFromLines(etc #:: moreLines)
+
+      case StringLiteralEtc(stringLiteral, etc) #:: moreLines =>
+        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
+
+      case ResourceEtc(resource, etc) #:: moreLines =>
+        resource #:: entitiesFromLines(etc #:: moreLines)
+
+      case Stream.Empty =>
+        Stream.Empty
+
+      // throw parse error when unmatched
     }
   }
 

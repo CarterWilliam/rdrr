@@ -19,7 +19,7 @@ class TurtleMarshallerSpec extends Specification {
       "be able to handle a large turtle file" in new Scope with TestHelpers {
         val turtle = getResource("bbc.ttl")
         val graph = marshaller.fromTurtle(turtle)
-        graph.size must be greaterThan 5
+        graph.size must be equalTo 287
       }
     }
 

@@ -23,37 +23,82 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
       }
     }
 
-    "marshall to Turtle" in new RdrrTurtleMarshallerScope {
-      val graph = Graph(Triple(
-        Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-        Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-        Resource("http://purl.org/ontology/mo/MusicArtist") ) )
-
-      val expected = "<https://en.wikipedia.org/wiki/Justin_Bieber> a <http://purl.org/ontology/mo/MusicArtist> ."
-      marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
-    }
+//    "marshall to Turtle" in new RdrrTurtleMarshallerScope {
+//      val graph = Graph(Triple(
+//        Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+//        Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+//        Resource("http://purl.org/ontology/mo/MusicArtist") ) )
+//
+//      val expected = "<https://en.wikipedia.org/wiki/Justin_Bieber> a <http://purl.org/ontology/mo/MusicArtist> ."
+//      marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
+//    }
 
     "extract inline resources" in {
-      "the first resource from a string of resources" in new SplitResourceStringScope {
-        val resourcesString = "wiki:Justin_Bieber a mo:Artist ."
-        val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
-        splitResources must beEqualTo("wiki:Justin_Bieber", "a mo:Artist .")
+
+      "from lines containing resources with full IRIs" in new EntitiesFromLinesScope {
+        val resourceString =
+          """
+            |<https://en.wikipedia.org/wiki/Justin_Bieber>
+            |  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.org/ontology/mo/MusicArtist> .""".stripMargin
+        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        splitResources must be equalTo Stream(
+          "<https://en.wikipedia.org/wiki/Justin_Bieber>",
+          "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
+          "<http://purl.org/ontology/mo/MusicArtist>",
+          "." )
       }
-      "the first string literal from a string of resources" in new SplitResourceStringScope {
-        val resourcesString = "\"Justin Bieber\" ."
-        val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
-        splitResources must beEqualTo("\"Justin Bieber\"", ".")
+      "from lines containing prefixed resources" in new EntitiesFromLinesScope {
+        val resourceString =
+          """
+            |@prefix wiki: <https://en.wikipedia.org/wiki/> .
+            |@prefix mo: <http://purl.org/ontology/mo/> .
+            |wiki:Justin_Bieber a mo:MusicArtist .""".stripMargin
+        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        splitResources must be equalTo Stream(
+          "@prefix wiki: <https://en.wikipedia.org/wiki/> .",
+          "@prefix mo: <http://purl.org/ontology/mo/> .",
+          "wiki:Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
-      "the first string literal with language from a string of resources" in new SplitResourceStringScope {
-        val resourcesString = "\"Justin Bieber\"@en ;"
-        val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
-        splitResources must beEqualTo("\"Justin Bieber\"@en", ";")
+      "from lines containing base-prefixed resources" in new EntitiesFromLinesScope {
+        val resourceString =
+          """
+            |@base wiki: <https://en.wikipedia.org/wiki/> .
+            |@prefix mo: <http://purl.org/ontology/mo/> .
+            |:Justin_Bieber a mo:MusicArtist .""".stripMargin
+        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        splitResources must be equalTo Stream(
+          "@base wiki: <https://en.wikipedia.org/wiki/> .",
+          "@prefix mo: <http://purl.org/ontology/mo/> .",
+          ":Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
-      "the first string literal with custom datatype iri" in new SplitResourceStringScope {
-        val resourcesString = "\"Justin Bieber\"^^xsd:string ,"
-        val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
-        splitResources must beEqualTo("\"Justin Bieber\"^^xsd:string", ",")
+      "from lines containing String literals with whitespace" in new EntitiesFromLinesScope {
+        val line = "  \"Justin Bieber\" ."
+        val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+        splitResources must be equalTo Stream("\"Justin Bieber\"", ".")
       }
+      "from lines containing language String literals with whitespace" in new EntitiesFromLinesScope {
+        val line = "  \"Justin Bieber\"@en-gb ,"
+        val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+        splitResources must be equalTo Stream("\"Justin Bieber\"@en-gb", ",")
+      }
+      "from lines containing 'punctuation' characters immediately after" in {
+        "a resource" in new EntitiesFromLinesScope {
+          val line = "  <http://purl.org/ontology/mo/MusicArtist>."
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("<http://purl.org/ontology/mo/MusicArtist>", ".")
+        }
+        "a string literal" in new EntitiesFromLinesScope {
+          val line = """  "string literal", """
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("\"string literal\"", ",")
+        }
+        "a complex string literal" in new EntitiesFromLinesScope {
+          val line = """  "string literal"@en; """
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("\"string literal\"@en", ";")
+        }
+      }
+
     }
 
 
@@ -133,7 +178,6 @@ trait CreateLiteralsScope extends RdrrTurtleMarshallerScope with PrivateMethodTe
   val nodeFromTurtle = PrivateMethod[Node]('nodeFromTurtle)
 }
 
-trait SplitResourceStringScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
-  type Tup2 = (String, String)
-  val splitResourceString = PrivateMethod[Tup2]('splitResourceString)
+trait EntitiesFromLinesScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
+  val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
 }
