@@ -60,7 +60,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
     val PrefixLine = """^\s*(@(?:base|prefix)\s+.*\.)\s*$""".r
     val PunctuationEtc = """^\s*([,;.])\s*(.*)$""".r
     val StringLiteralEtc = """^\s*("[^"]*"[^\s;,.]*)\s*(.*)$""".r
-    val ResourceEtc = """^\s*(\S*[^\s,;.])\s*(.*)$""".r
+    val ResourceEtc = """^\s*([^\s'"]*[^\s'",;.])\s*(.*)$""".r
 
     lines match {
 
@@ -82,7 +82,8 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
       case Stream.Empty =>
         Stream.Empty
 
-      // throw parse error when unmatched
+      case unmatchedLine #:: rest =>
+        throw new TurtleParseError(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
     }
   }
 

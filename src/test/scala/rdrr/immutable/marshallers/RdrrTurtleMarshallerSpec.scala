@@ -33,8 +33,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
 //      marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
 //    }
 
-    "extract inline resources" in {
-
+    "extract entities from lines" in {
       "from lines containing resources with full IRIs" in new EntitiesFromLinesScope {
         val resourceString =
           """
@@ -63,12 +62,10 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
         val resourceString =
           """
             |@base wiki: <https://en.wikipedia.org/wiki/> .
-            |@prefix mo: <http://purl.org/ontology/mo/> .
             |:Justin_Bieber a mo:MusicArtist .""".stripMargin
         val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream(
           "@base wiki: <https://en.wikipedia.org/wiki/> .",
-          "@prefix mo: <http://purl.org/ontology/mo/> .",
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
       "from lines containing String literals with whitespace" in new EntitiesFromLinesScope {
@@ -96,6 +93,12 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           val line = """  "string literal"@en; """
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"string literal\"@en", ";")
+        }
+      }
+      "and throw an exception if line is unrecognised" in new EntitiesFromLinesScope {
+        val lines = Stream("  \"unclosed string literal .")
+        marshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseError].like { case TurtleParseError(message) =>
+          message must be equalTo s"RDRR Turtle Marshaller could not parse the line: '${lines.head}'"
         }
       }
 
