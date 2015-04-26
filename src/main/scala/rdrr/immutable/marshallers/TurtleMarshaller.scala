@@ -7,4 +7,4 @@ trait TurtleMarshaller {
   def toTurtle(graph: Graph): String
 }
 
-case class TurtleParseError(message: String) extends Exception(message)
+case class TurtleParseException(message: String) extends Exception(message)

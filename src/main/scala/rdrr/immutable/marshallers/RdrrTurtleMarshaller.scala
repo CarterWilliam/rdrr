@@ -18,41 +18,44 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
-  private[this] val Prefix = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
   private[this] def triplesFromEntities(entities: Stream[String],
                        prefixes: Map[String, String] = Map.empty,
-                       partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = entities match {
+                       partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = {
 
-    case Prefix(prefix, uri) #:: rest =>
-      // Add to prefixes and continue.
-      triplesFromEntities(rest, prefixes + (prefix -> uri), partialTriple)
+    val Prefix = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
 
-    case entity #:: rest => {
-      partialTriple match {
-        case EmptyTriple =>
-          val unfinishedTriple = Subject(Resource(iriFromTurtleRepresentation(entity, prefixes)))
-          triplesFromEntities(rest, prefixes, unfinishedTriple)
+    entities match {
 
-        case Subject(subject) =>
-          val unfinishedTriple = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(entity, prefixes)))
-          triplesFromEntities(rest, prefixes, unfinishedTriple)
+      case Prefix(prefix, uri) #:: rest =>
+        triplesFromEntities(rest, prefixes + (prefix -> uri), partialTriple)
 
-        case SubjectAndPredicate(subject, predicate) => {
-          entity match {
-            case AnotherObjectNext =>
-              triplesFromEntities(rest, prefixes, SubjectAndPredicate(subject, predicate))
-            case AnotherPredicateNext =>
-              triplesFromEntities(rest, prefixes, Subject(subject))
-            case AnotherSubjectNext =>
-              triplesFromEntities(rest, prefixes, EmptyTriple)
-            case resourceTurtle =>
-              Triple(subject, predicate, nodeFromTurtle(resourceTurtle, prefixes)) #:: triplesFromEntities(rest, prefixes, partialTriple)
+      case entity #:: rest => {
+        partialTriple match {
+          case EmptyTriple =>
+            val subjectPartial = Subject(Resource(iriFromTurtleRepresentation(entity, prefixes)))
+            triplesFromEntities(rest, prefixes, subjectPartial)
+
+          case Subject(subject) =>
+            val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(entity, prefixes)))
+            triplesFromEntities(rest, prefixes, subjectPredicatePartial)
+
+          case SubjectAndPredicate(subject, predicate) => {
+            entity match {
+              case AnotherObjectNext =>
+                triplesFromEntities(rest, prefixes, SubjectAndPredicate(subject, predicate))
+              case AnotherPredicateNext =>
+                triplesFromEntities(rest, prefixes, Subject(subject))
+              case AnotherSubjectNext =>
+                triplesFromEntities(rest, prefixes, EmptyTriple)
+              case resourceTurtle =>
+                Triple(subject, predicate, nodeFromTurtle(resourceTurtle, prefixes)) #:: triplesFromEntities(rest, prefixes, partialTriple)
+            }
           }
         }
       }
-    }
 
-    case Stream.Empty => Stream.Empty // done
+      case Stream.Empty => Stream.Empty // done
+    }
   }
 
 
@@ -79,11 +82,10 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
       case ResourceEtc(resource, etc) #:: moreLines =>
         resource #:: entitiesFromLines(etc #:: moreLines)
 
-      case Stream.Empty =>
-        Stream.Empty
+      case Stream.Empty => Stream.Empty
 
       case unmatchedLine #:: rest =>
-        throw new TurtleParseError(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
+        throw new TurtleParseException(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
     }
   }
 
@@ -95,9 +97,9 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
       case rdfShorthand if RdfStandardResources.contains(rdfShorthand) => RdfStandardResources(rdfShorthand)
       case UriResource(uri) => uri
       case PrefixedResource(prefix, name) => prefixedIris.get(prefix).map(_ + name).getOrElse {
-        throw new ParseException(s"Resource does not have given prefix defined in the document: $prefix")
+        throw new TurtleParseException(s"Resource does not have given prefix defined in the document: $prefix")
       }
-      case unmatched => throw new ParseException(s"turtle representation not in a form understood by the parser: $unmatched")
+      case unmatched => throw new TurtleParseException(s"turtle representation not in a form understood by the parser: $unmatched")
     }
   }
 
@@ -135,5 +137,4 @@ object EmptyTriple extends PartialTriple
 case class Subject(subject: Resource) extends PartialTriple
 case class SubjectAndPredicate(subject: Resource, predicate: Predicate) extends PartialTriple
 
-class ParseException(message: String) extends Exception(message: String)
 

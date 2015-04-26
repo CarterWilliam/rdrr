@@ -97,7 +97,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
       }
       "and throw an exception if line is unrecognised" in new EntitiesFromLinesScope {
         val lines = Stream("  \"unclosed string literal .")
-        marshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseError].like { case TurtleParseError(message) =>
+        marshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseException].like { case TurtleParseException(message) =>
           message must be equalTo s"RDRR Turtle Marshaller could not parse the line: '${lines.head}'"
         }
       }
@@ -120,10 +120,10 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
         typeIri must be equalTo "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
       "throwing an exception if a prefixed resource has no matching prefix" in new IriExtractScope {
-        marshaller invokePrivate iriFromTurtleRepresentation("mo:MusicArtist", Map.empty) must throwA[ParseException]
+        marshaller invokePrivate iriFromTurtleRepresentation("mo:MusicArtist", Map.empty) must throwA[TurtleParseException]
       }
       "throwing an exception if a resource is not in a recognised format" in new IriExtractScope {
-        marshaller invokePrivate iriFromTurtleRepresentation("moMusicArtist", Map.empty) must throwA[ParseException]
+        marshaller invokePrivate iriFromTurtleRepresentation("moMusicArtist", Map.empty) must throwA[TurtleParseException]
       }
     }
 
