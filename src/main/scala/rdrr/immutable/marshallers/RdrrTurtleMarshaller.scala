@@ -61,9 +61,9 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
   private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
     val PrefixLine = """^\s*(@(?:base|prefix)\s+.*\.)\s*$""".r
-    val PunctuationEtc = """^\s*([,;.])\s*(.*)$""".r
-    val StringLiteralEtc = """^\s*("[^"]*"[^\s;,.]*)\s*(.*)$""".r
-    val ResourceEtc = """^\s*([^\s'"]*[^\s'",;.])\s*(.*)$""".r
+    val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
+    val StringLiteralEtc = "^\\s*((\"\"\"|'''|\"|').*?\\2[^\\s;,.]*)\\s*(.*)$".r
+    val ResourceEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
 
     lines match {
 
@@ -76,7 +76,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
       case PunctuationEtc(punctuation, etc) #:: moreLines =>
         punctuation #:: entitiesFromLines(etc #:: moreLines)
 
-      case StringLiteralEtc(stringLiteral, etc) #:: moreLines =>
+      case StringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
         stringLiteral #:: entitiesFromLines(etc #:: moreLines)
 
       case ResourceEtc(resource, etc) #:: moreLines =>

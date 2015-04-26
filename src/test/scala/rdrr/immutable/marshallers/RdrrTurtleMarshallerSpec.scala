@@ -9,6 +9,7 @@ import utilities.TestHelpers
 class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
 
   "The Turtle Marshaller" can {
+
     "marshal from" in {
       "triples with Resources from Turtle" in new RdrrTurtleMarshallerScope {
         val turtle = getResource("bieber-is-an-artist.ttl")
@@ -68,15 +69,32 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           "@base wiki: <https://en.wikipedia.org/wiki/> .",
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
-      "from lines containing String literals with whitespace" in new EntitiesFromLinesScope {
-        val line = "  \"Justin Bieber\" ."
-        val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
-        splitResources must be equalTo Stream("\"Justin Bieber\"", ".")
-      }
-      "from lines containing language String literals with whitespace" in new EntitiesFromLinesScope {
-        val line = "  \"Justin Bieber\"@en-gb ,"
-        val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
-        splitResources must be equalTo Stream("\"Justin Bieber\"@en-gb", ",")
+      "from lines containing String literals" in {
+        "with whitespace" in new EntitiesFromLinesScope {
+          val line = "  \"Justin Bieber\" ."
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("\"Justin Bieber\"", ".")
+        }
+        "with whitespace and language tag" in new EntitiesFromLinesScope {
+          val line = "  \"Justin Bieber\"@en-gb ,"
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("\"Justin Bieber\"@en-gb", ",")
+        }
+        "enclosed with apostrophes" in new EntitiesFromLinesScope {
+          val line = "  'Justin Bieber'@en ."
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("'Justin Bieber'@en", ".")
+        }
+        "enclosed with triple-quotes" in new EntitiesFromLinesScope {
+          val line = " \"\"\" '''''\" \"''''' \"\"\" ."
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("\"\"\" '''''\" \"''''' \"\"\"", ".")
+        }
+        "enclosed with triple-apostrophes" in new EntitiesFromLinesScope {
+          val line = """ ''' quotes '@en ' quotes ''',"""
+          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          splitResources must be equalTo Stream("''' quotes '@en ' quotes '''", ",")
+        }
       }
       "from lines containing 'punctuation' characters immediately after" in {
         "a resource" in new EntitiesFromLinesScope {
@@ -95,7 +113,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           splitResources must be equalTo Stream("\"string literal\"@en", ";")
         }
       }
-      "and throw an exception if line is unrecognised" in new EntitiesFromLinesScope {
+      "and throw an exception if the line is unrecognised" in new EntitiesFromLinesScope {
         val lines = Stream("  \"unclosed string literal .")
         marshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseException].like { case TurtleParseException(message) =>
           message must be equalTo s"RDRR Turtle Marshaller could not parse the line: '${lines.head}'"
