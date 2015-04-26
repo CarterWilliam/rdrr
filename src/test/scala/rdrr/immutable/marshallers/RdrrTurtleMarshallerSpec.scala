@@ -49,6 +49,11 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
         val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
         splitResources must beEqualTo("\"Justin Bieber\"@en", ";")
       }
+      "the first string literal with custom datatype iri" in new SplitResourceStringScope {
+        val resourcesString = "\"Justin Bieber\"^^xsd:string ,"
+        val splitResources = marshaller invokePrivate splitResourceString(resourcesString)
+        splitResources must beEqualTo("\"Justin Bieber\"^^xsd:string", ",")
+      }
     }
 
 

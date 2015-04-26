@@ -18,7 +18,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromLines(lines))
 
-  private[this] val PrefixLine = """^@prefix (.*): <(.*)>\s*.$""".r
+  private[this] val PrefixLine = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
   private[this] def triplesFromLines(lines: Stream[String],
                        prefixes: Map[String, String] = Map.empty,
                        partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = lines match {
@@ -63,13 +63,11 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
   }
 
   private[this] def splitResourceString(resourceString: String): (String, String) = {
-    val StringLiteralEtc = """^(".*") (.*)$""".r
-    val StringLiteralWithLanguageEtc = """^(".*"@\S*) (.*)$""".r
-    val ResourceEtc = """^(\S*) (.*)$""".r
+    val StringLiteralEtc = """^("[^"]*"[^\s;,.]*)\s*(.*)$""".r
+    val ResourceEtc = """^(\S*)\s+(.*)$""".r
 
     resourceString.trim match {
       case StringLiteralEtc(stringLiteral, etc) => (stringLiteral, etc)
-      case StringLiteralWithLanguageEtc(stringLiteral, etc) => (stringLiteral, etc)
       case ResourceEtc(resource, etc) => (resource, etc)
       case lastResource => (lastResource, "")
     }

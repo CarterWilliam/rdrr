@@ -1,0 +1,270 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix result: <http://purl.org/ontology/rdf-result/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix sport: <http://www.bbc.co.uk/ontologies/sport/> .
+@prefix news: <http://www.bbc.co.uk/ontologies/news/> .
+@prefix nsl: <http://purl.org/ontology/storyline/> .
+@prefix cwork: <http://www.bbc.co.uk/ontologies/creativework/> .
+@prefix core: <http://www.bbc.co.uk/ontologies/coreconcepts/> .
+@prefix bbc: <http://www.bbc.co.uk/ontologies/bbc/> .
+@prefix tagging: <http://www.bbc.co.uk/ontologies/tagging/> .
+@prefix cms: <http://www.bbc.co.uk/ontologies/cms/> .
+@prefix provenance: <http://www.bbc.co.uk/ontologies/provenance/> .
+@prefix pol: <http://www.bbc.co.uk/ontologies/politics/> .
+@prefix biz: <http://www.bbc.co.uk/ontologies/business/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix curric: <http://www.bbc.co.uk/ontologies/curriculum/> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix geo-pol: <http://www.bbc.co.uk/ontologies/geopolitical/> .
+@prefix geoname: <http://www.geonames.org/ontology#> .
+@prefix omgeo: <http://www.ontotext.com/owlim/geo#> .
+@prefix asset: <http://www.bbc.co.uk/ontologies/asset/> .
+@prefix domain: <http://www.bbc.co.uk/ontologies/domain/> .
+@prefix tag: <http://www.bbc.co.uk/ontologies/tag/> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions#> .
+
+
+result:this result:next <http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> result:next <http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> result:next <http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> result:next <http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> result:next <http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> result:next <http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> result:next <http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> result:next <http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> result:next <http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> result:next <http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> a rdfs:Resource , owl:Thing , core:Thing , tagging:TagConcept , sport:CompetitiveSportingOrganisation , sport:SportingOrganisation , <http://xmlns.com/foaf/0.1/Organization> , <http://xmlns.com/foaf/0.1/Agent> , tag:TagConcept , domain:Thing , cms:ManagedThing , <http://www.bbc.co.uk/ontologies/taggingTagConcept> .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:preferredLabel "Aberdeen"@en-gb .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:preferredLabel "Accrington Stanley"@en-gb .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:preferredLabel "AFC Wimbledon"@en-gb .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:preferredLabel "Airdrieonians"@en-gb .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:preferredLabel "Albion Rovers"@en-gb .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:preferredLabel "Aldershot Town"@en-gb .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:preferredLabel "Alloa Athletic"@en-gb .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:preferredLabel "Annan Athletic"@en-gb .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:preferredLabel "Arbroath"@en-gb .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:preferredLabel "Arsenal"@en-gb .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:shortLabel "Aberdeen"@en-gb .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:shortLabel "Accrington"@en-gb .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:shortLabel "Wimbledon"@en-gb .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:shortLabel "Airdrieonians"@en-gb .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:shortLabel "Albion"@en-gb .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:shortLabel "Aldershot"@en-gb .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:shortLabel "Alloa"@en-gb .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:shortLabel "Annan Athletic"@en-gb .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:shortLabel "Arbroath"@en-gb .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:shortLabel "Arsenal"@en-gb .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> domain:name "Aberdeen"^^xsd:string .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> domain:name "Accrington Stanley"^^xsd:string .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> domain:name "AFC Wimbledon"^^xsd:string .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> domain:name "Airdrieonians"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> domain:name "Albion Rovers"^^xsd:string .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> domain:name "Aldershot Town"^^xsd:string .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> domain:name "Alloa Athletic"^^xsd:string .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> domain:name "Annan Athletic"^^xsd:string .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> domain:name "Arbroath"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> domain:name "Arsenal"^^xsd:string .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> domain:shortName "Aberdeen"^^xsd:string .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> domain:shortName "Accrington"^^xsd:string .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> domain:shortName "Wimbledon"^^xsd:string .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> domain:shortName "Airdrieonians"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> domain:shortName "Albion"^^xsd:string .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> domain:shortName "Aldershot"^^xsd:string .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> domain:shortName "Alloa"^^xsd:string .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> domain:shortName "Annan Athletic"^^xsd:string .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> domain:shortName "Arbroath"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> domain:shortName "Arsenal"^^xsd:string .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> domain:canonicalName "Aberdeen"^^xsd:string , "Aberdeen"@en-gb .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> domain:canonicalName "Accrington Stanley"^^xsd:string , "Accrington Stanley"@en-gb .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> domain:canonicalName "AFC Wimbledon"^^xsd:string , "AFC Wimbledon"@en-gb .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> domain:canonicalName "Airdrieonians"^^xsd:string , "Airdrieonians"@en-gb .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> domain:canonicalName "Albion Rovers"^^xsd:string , "Albion Rovers"@en-gb .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> domain:canonicalName "Aldershot Town"^^xsd:string , "Aldershot Town"@en-gb .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> domain:canonicalName "Alloa Athletic"^^xsd:string , "Alloa Athletic"@en-gb .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> domain:canonicalName "Annan Athletic"^^xsd:string , "Annan Athletic"@en-gb .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> domain:canonicalName "Arbroath"^^xsd:string , "Arbroath"@en-gb .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> domain:canonicalName "Arsenal"^^xsd:string , "Arsenal"@en-gb .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> domain:document <http://www.bbc.co.uk/sport/football/teams/aberdeen> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/af04e269819812b6?output=rss;recipe=sport_refresh> , <http://www.afc.co.uk/page/Welcome> .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> domain:document <http://www.bbc.co.uk/sport/football/teams/accrington-stanley> , <http://www.accringtonstanley.co.uk/> .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> domain:document <http://www.bbc.co.uk/sport/football/teams/afc-wimbledon> , <http://www.afcwimbledon.co.uk/> .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> domain:document <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/a6b93834c99c03a4?output=rss;recipe=sport_refresh> , <http://airdriefc.com/index.html> , <http://www.bbc.co.uk/sport/football/teams/airdrieonians> .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> domain:document <http://www.bbc.co.uk/sport/football/teams/albion-rovers> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/b80bd3afb8741c3b?output=rss;recipe=sport_refresh> , <http://albionroversfc.com/> .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> domain:document <http://www.theshots.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/aldershot-town> .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> domain:document <http://www.alloaathletic.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/alloa-athletic> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/8a802fce6ea2d9c6?output=rss;recipe=sport_refresh> .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> domain:document <http://www.bbc.co.uk/sport/football/teams/annan-athletic> , <http://www.annanathleticfc.com/> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/83eb4db582934340?output=rss;recipe=sport_refresh> .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> domain:document <http://www.arbroathfc.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/arbroath> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/82dd233168c9f3fe?output=rss;recipe=sport_refresh> .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> domain:document <http://www.bbc.co.uk/sport/football/teams/arsenal> , <http://open.live.bbc.co.uk/esp-service/moreover/newsdesk4/a63a644da6122e69?output=rss;recipe=sport_refresh> , <http://www.arsenal.com/home> .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:disambiguationHint "English Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:disambiguationHint "English Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:disambiguationHint "English Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:disambiguationHint "Scottish Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:disambiguationHint "English Football Team"@en-gb .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:slug "aberdeen"^^xsd:string .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:slug "accrington-stanley"^^xsd:string .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:slug "afc-wimbledon"^^xsd:string .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:slug "airdrieonians"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:slug "albion-rovers"^^xsd:string .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:slug "aldershot-town"^^xsd:string .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:slug "alloa-athletic"^^xsd:string .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:slug "annan-athletic"^^xsd:string .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:slug "arbroath"^^xsd:string .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:slug "arsenal"^^xsd:string .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/aberdeen> , <http://www.afc.co.uk/page/Welcome> .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/accrington-stanley> , <http://www.accringtonstanley.co.uk/> .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/afc-wimbledon> , <http://www.afcwimbledon.co.uk/> .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:primaryTopicOf <http://airdriefc.com/index.html> , <http://www.bbc.co.uk/sport/football/teams/airdrieonians> .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/albion-rovers> , <http://albionroversfc.com/> .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:primaryTopicOf <http://www.theshots.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/aldershot-town> .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:primaryTopicOf <http://www.alloaathletic.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/alloa-athletic> .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/annan-athletic> , <http://www.annanathleticfc.com/> .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:primaryTopicOf <http://www.arbroathfc.co.uk/> , <http://www.bbc.co.uk/sport/football/teams/arbroath> .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:primaryTopicOf <http://www.bbc.co.uk/sport/football/teams/arsenal> , <http://www.arsenal.com/home> .
+
+<http://www.bbc.co.uk/things/de96e227-7e77-974f-aab2-2e37598c5cc2#id> core:sameAs <http://dbpedia.org/resource/Aberdeen_F.C.> , <http://rdf.freebase.com/ns/m.01jdxj> , <http://www.wikidata.org/entity/Q187326> .
+
+<http://www.bbc.co.uk/things/cb19b305-06e8-b74e-aac1-53e0966ec4ac#id> core:sameAs <http://dbpedia.org/resource/Accrington_Stanley_F.C.> , <http://www.wikidata.org/entity/Q48843> , <http://rdf.freebase.com/ns/m.0hcm7> .
+
+<http://www.bbc.co.uk/things/39885edd-5611-b540-ae3a-43026125bfd8#id> core:sameAs <http://dbpedia.org/resource/AFC_Wimbledon> , <http://www.wikidata.org/entity/Q48851> , <http://rdf.freebase.com/ns/m.01whvs> .
+
+<http://www.bbc.co.uk/things/beb634cb-1d91-fb42-a3af-da4754910dff#id> core:sameAs <http://rdf.freebase.com/ns/m.02b1ws> , <http://dbpedia.org/resource/Airdrieonians_F.C.> , <http://www.wikidata.org/entity/Q408554> .
+
+<http://www.bbc.co.uk/things/c2f82556-447b-7249-a2db-bc5106d32f06#id> core:sameAs <http://dbpedia.org/resource/Albion_Rovers_F.C.> , <http://www.wikidata.org/entity/Q656134> , <http://rdf.freebase.com/ns/m.03t254> .
+
+<http://www.bbc.co.uk/things/6dc681ec-3b9b-2942-9042-f514c00a1f64#id> core:sameAs <http://dbpedia.org/resource/Aldershot_Town_F.C.> , <http://rdf.freebase.com/ns/m.01kckd> , <http://www.wikidata.org/entity/Q48862> .
+
+<http://www.bbc.co.uk/things/ecf61a12-6be0-3948-8a94-98ede890bf33#id> core:sameAs <http://dbpedia.org/resource/Alloa_Athletic_F.C.> , <http://rdf.freebase.com/ns/m.02b1xk> , <http://www.wikidata.org/entity/Q1377801> .
+
+<http://www.bbc.co.uk/things/e93a3145-285d-4940-8018-8bafdc498ff0#id> core:sameAs <http://dbpedia.org/resource/Annan_Athletic_F.C.> , <http://www.wikidata.org/entity/Q564497> , <http://rdf.freebase.com/ns/m.05sl4s> .
+
+<http://www.bbc.co.uk/things/4a604f70-d799-fe48-b32d-fc5b1471b2d6#id> core:sameAs <http://dbpedia.org/resource/Arbroath_F.C.> , <http://rdf.freebase.com/ns/m.02b1xy> , <http://www.wikidata.org/entity/Q539374> .
+
+<http://www.bbc.co.uk/things/c4285a9a-9865-2343-af3a-8653f7b70734#id> core:sameAs <http://dbpedia.org/resource/Arsenal_F.C.> , <http://www.wikidata.org/entity/Q9617> , <http://rdf.freebase.com/ns/m.0xbm> .
