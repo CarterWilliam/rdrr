@@ -6,16 +6,11 @@ import scala.io.Source
 
 class RdrrTurtleMarshaller extends TurtleMarshaller {
 
-  val AnotherObjectNext = ","
-  val AnotherPredicateNext = ";"
-  val AnotherSubjectNext = "."
-
   val RdfStandardResources: Map[String, String] = Map {
     "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
   }
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
-
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
   private[this] def triplesFromEntities(entities: Stream[String],
@@ -23,6 +18,9 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
                        partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = {
 
     val Prefix = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
+    val AnotherPredicateNext = ";"
+    val AnotherObjectNext = ","
+    val AnotherSubjectNext = "."
 
     entities match {
 
@@ -62,7 +60,9 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
   private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
     val PrefixLine = """^\s*(@(?:base|prefix)\s+.*\.)\s*$""".r
     val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
-    val StringLiteralEtc = "^\\s*((\"\"\"|'''|\"|').*?\\2[^\\s;,.]*)\\s*(.*)$".r
+    val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
+    val MultilineStringLiteralStart = "^\\s*((\"\"\"|''').*)".r
+    val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r
     val ResourceEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
 
     lines match {
@@ -75,6 +75,12 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
       case PunctuationEtc(punctuation, etc) #:: moreLines =>
         punctuation #:: entitiesFromLines(etc #:: moreLines)
+
+      case TripleQuotedStringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
+        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
+
+      case MultilineStringLiteralStart(stringStart, quoteType) #:: nextLine #:: moreLines =>
+        entitiesFromLines(s"$stringStart\n$nextLine" #:: moreLines)
 
       case StringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
         stringLiteral #:: entitiesFromLines(etc #:: moreLines)
