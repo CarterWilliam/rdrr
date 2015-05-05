@@ -64,6 +64,7 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
     val MultilineStringLiteralStart = "^\\s*((\"\"\"|''').*)".r
     val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r
     val ResourceEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
+    val WhitespaceLine = """^(\s*)$""".r
 
     lines match {
 
@@ -87,6 +88,9 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
 
       case ResourceEtc(resource, etc) #:: moreLines =>
         resource #:: entitiesFromLines(etc #:: moreLines)
+
+      case WhitespaceLine(_) #:: moreLines =>
+        entitiesFromLines(moreLines)
 
       case Stream.Empty => Stream.Empty
 
