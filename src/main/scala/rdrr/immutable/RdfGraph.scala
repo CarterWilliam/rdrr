@@ -14,16 +14,18 @@ case class RdfGraph(triples: Seq[Triple] = Nil, prefixes: Seq[Prefix] = Nil) ext
   def contains(subject: Resource, predicate: Predicate, `object`: Node): Boolean =
     triples.contains(Triple(subject, predicate, `object`))
 
-  def filter(subject: Option[Resource] = None, predicate: Option[Predicate] = None, `object`: Option[Node] = None) = RdfGraph {
-    triples.filter { case Triple(s, p, o) =>
-      Seq(subject.map(s.equals), predicate.map(p.equals), `object`.map(o.equals)).flatten.forall(_ == true)
-    }
-  }
-
   override lazy val length: Int = triples.length
   override def apply(index: Int): Triple = triples(index)
   override def iterator: Iterator[Triple] = triples.iterator
-  override def filter(predicate: Triple => Boolean) = new RdfGraph(triples.filter(predicate), prefixes)
+  
+  override def filter(predicate: Triple => Boolean) = RdfGraph(triples.filter(predicate), prefixes)
+
+  def transform(partialFunction: PartialFunction[Triple, Triple]) =
+    RdfGraph(triples.collect(partialFunction).distinct, prefixes)
+
+  def ++ (graph: RdfGraph) = RdfGraph((triples ++ graph.triples).distinct, (prefixes ++ graph.prefixes).distinct)
+  def :+ (∆ : Triple) = RdfGraph((triples :+ ∆).distinct, prefixes)
+  def +: (∆ : Triple) = RdfGraph((∆ +: triples).distinct, prefixes)
 }
 
 object RdfGraph {
