@@ -11,11 +11,11 @@ import scala.collection.JavaConverters._
 
 class JenaTurtleUnmarshaller extends TurtleUnmarshaller with JavaHelpers {
 
-  override def fromTurtle(turtle: String): Graph = closeWhenDone(new StringReader(turtle)) { reader =>
+  override def fromTurtle(turtle: String): RdfGraph = closeWhenDone(new StringReader(turtle)) { reader =>
     val model = ModelFactory.createDefaultModel()
     model.read(reader, null, "TTL")
     val triples = tripleStreamFromJenaStatements(model.listStatements.asScala.toStream)
-    Graph(triples)
+    RdfGraph(triples)
   }
 
   private def tripleStreamFromJenaStatements(statementStream: Stream[JenaStatement]): Stream[Triple] = statementStream match {
@@ -41,7 +41,7 @@ class JenaTurtleUnmarshaller extends TurtleUnmarshaller with JavaHelpers {
 
 class JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
 
-  override def toTurtle(graph: Graph): String = {
+  override def toTurtle(graph: RdfGraph): String = {
 
     val jenaModel = ModelFactory.createDefaultModel()
 
