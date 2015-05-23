@@ -1,7 +1,5 @@
 package rdrr.immutable
 
-import rdrr.immutable.marshallers.{TurtleMarshaller, JenaTurtleMarshaller}
-
 case class Triple(subject: Resource, predicate: Predicate, `object`: Node)
 
 class Graph(triples: Seq[Triple]) extends Seq[Triple] {
@@ -28,9 +26,7 @@ object Graph {
 
   def apply(triples: Seq[Triple]): Graph = new Graph(triples)
   def apply(first: Triple, rest: Triple*): Graph = new Graph(first +: rest)
+
   val Empty = Graph(Stream.Empty)
 
-  val marshaller: TurtleMarshaller = new JenaTurtleMarshaller
-  def parse(turtle: String): Graph = marshaller.fromTurtle(turtle)
-  def toTurtle(graph: Graph): String = marshaller.toTurtle(graph)
 }

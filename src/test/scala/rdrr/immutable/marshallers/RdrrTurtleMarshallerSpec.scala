@@ -11,13 +11,13 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
   "The Turtle Marshaller" can {
 
     "marshal from" in {
-      "triples with Resources from Turtle" in new RdrrTurtleMarshallerScope {
+      "triples with Resources from Turtle" in new RdrrTurtleUnmarshallerScope {
         val turtle = getResource("bieber-is-an-artist.ttl")
         val graph = marshaller.fromTurtle(turtle)
         graph must have size 1
       }
 
-      "triples with resources and literals from Turtle" in new RdrrTurtleMarshallerScope {
+      "triples with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {
         val turtle = getResource("bieber.ttl")
         val graph = marshaller.fromTurtle(turtle)
         graph must have size 3
@@ -207,18 +207,18 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
   }
 }
 
-trait RdrrTurtleMarshallerScope extends Scope with TestHelpers {
-  val marshaller = new RdrrTurtleMarshaller()
+trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
+  val marshaller = new RdrrTurtleUnmarshaller()
 }
 
-trait IriExtractScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
+trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val iriFromTurtleRepresentation = PrivateMethod[String]('iriFromTurtleRepresentation)
 }
 
-trait CreateLiteralsScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
+trait CreateLiteralsScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val nodeFromTurtle = PrivateMethod[Node]('nodeFromTurtle)
 }
 
-trait EntitiesFromLinesScope extends RdrrTurtleMarshallerScope with PrivateMethodTester {
+trait EntitiesFromLinesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
 }

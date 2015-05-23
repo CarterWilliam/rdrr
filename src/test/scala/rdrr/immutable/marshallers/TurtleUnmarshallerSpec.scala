@@ -4,12 +4,12 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import utilities.TestHelpers
 
-class TurtleMarshallerSpec extends Specification {
+class TurtleUnmarshallerSpec extends Specification {
 
-  case class MarshallerImplementation(name: String, marshaller: TurtleMarshaller)
+  case class MarshallerImplementation(name: String, marshaller: TurtleUnmarshaller)
 
-  val rdrrImplementation = MarshallerImplementation("RDRR", new RdrrTurtleMarshaller)
-  val jenaImplementation = MarshallerImplementation("Jena", new JenaTurtleMarshaller)
+  val rdrrImplementation = MarshallerImplementation("RDRR", new RdrrTurtleUnmarshaller)
+  val jenaImplementation = MarshallerImplementation("Jena", new JenaTurtleUnmarshaller)
 
   Seq(jenaImplementation, rdrrImplementation).foreach { implementation =>
 

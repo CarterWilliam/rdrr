@@ -1,9 +1,7 @@
 package rdrr.immutable
 
-package bbc.nexus.rdf.graph
-
 import org.scalatest.{FunSpec, MustMatchers}
-import rdrr.immutable.marshallers.{JenaTurtleMarshaller, RdrrTurtleMarshaller}
+import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller
 
 class DemonstrationSpec extends FunSpec with MustMatchers {
 
@@ -96,7 +94,7 @@ class DemonstrationSpec extends FunSpec with MustMatchers {
       |
     """.stripMargin
 
-  val marshaller = new RdrrTurtleMarshaller
+  val marshaller = new RdrrTurtleUnmarshaller
   val graph = marshaller.fromTurtle(turtle)
 
 

@@ -4,7 +4,7 @@ import rdrr.immutable._
 
 import scala.io.Source
 
-class RdrrTurtleMarshaller extends TurtleMarshaller {
+class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val RdfStandardResources: Map[String, String] = Map {
     "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -132,10 +132,6 @@ class RdrrTurtleMarshaller extends TurtleMarshaller {
       case DecimalLiteralMatcher(decimal) => DecimalLiteral(decimal.toDouble)
       case _ => Resource(iriFromTurtleRepresentation(turtleRepresentation, prefixedIris))
     }
-  }
-
-  override def toTurtle(graph: Graph): String = graph.subjects.foldLeft("") { (out, subject) =>
-    ???
   }
 
 }
