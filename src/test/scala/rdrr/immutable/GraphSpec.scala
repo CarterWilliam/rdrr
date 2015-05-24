@@ -20,27 +20,67 @@ class GraphSpec extends Specification {
       graph.contains(JustinBieber, a, Artist) must beTrue
       graph.contains(JustinBieberHasAName) must beFalse
     }
-    "allow filtering" in {
-      "generically" in new GraphScope {
+
+    "concatenation" in {
+    
+      "allow concatenation" in new GraphScope {
+        val graphWithAllTriples = Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
+        Graph(JustinBieberIsAnArtist) ++ Graph(JustinBieberHasAName) must be equalTo graphWithAllTriples
+      }
+      
+      "remove duplicate triples when concatenated with another graph" in new GraphScope {
+        val graph = Graph(JustinBieberIsAnArtist) ++ Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
+        graph must have size 2
+      }
+    }
+    
+    "appending elements" in {
+    
+      "allow appending additional triples" in new GraphScope {
+        Graph(JustinBieberIsAnArtist) :+ JustinBieberHasAName must be equalTo Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
+      }
+
+      "allow prepending additional triples" in new GraphScope {
+        JustinBieberHasAName +: Graph(JustinBieberIsAnArtist) must be equalTo Graph(JustinBieberHasAName, JustinBieberIsAnArtist)
+      }
+
+      "remove duplicate triples when appending/prepending" in new GraphScope {
+        val graph = JustinBieberIsAnArtist +: Graph(JustinBieberIsAnArtist) :+ JustinBieberIsAnArtist
+        graph must have size 1
+      }
+
+    }
+
+    "filtering and transformation" in {
+
+      "allow filtering of the triples by a predicate" in new GraphScope {
         val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
-        val knownByCatriona = graph.filter { triple =>
+        val aboutPeopleThatCatrionaKnows = graph.filter { triple =>
           graph.contains(Catriona, knows, triple.subject)
         }
-        knownByCatriona.head must be equalTo JustinBieberIsAnArtist
+        aboutPeopleThatCatrionaKnows must be equalTo Graph(JustinBieberIsAnArtist, JustinBieberHasAName)
       }
-      "with optional subject, predicate, objects" in new GraphScope {
-        val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
-        val aboutCatriona = graph.filter(subject = Some(Catriona))
-        aboutCatriona.head must be equalTo CatrionaKnowsJustin
 
-      }
-      "with partial functions that transform the data" in new GraphScope {
+      "allow filtering of the triples by a partial functions that transform the data" in new GraphScope {
         val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
+        val TypePredicate = a
+
         val typesKnownByCatriona = graph.collect {
-          case Triple(person, a, personType) if graph.contains(Triple(Catriona, knows, person)) => personType
+          case Triple(person, TypePredicate, personType) if graph.contains(Triple(Catriona, knows, person)) =>
+            personType.as[Resource].uri.split("/").last
         }
-        typesKnownByCatriona.head must be equalTo Artist
+        typesKnownByCatriona.head must be equalTo "MusicArtist"
       }
+
+      "allow filtering and transforming of the triples by a partial function, removing duplicates" in new GraphScope {
+        val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
+
+        val transformed = graph.transform {
+          case Triple(JustinBieber, p, o) if p != name => Triple(Catriona, p, o)
+        }
+        transformed must be equalTo Graph(Triple(Catriona, a, Artist))
+      }
+
     }
   }
 }

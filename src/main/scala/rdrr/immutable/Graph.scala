@@ -6,20 +6,22 @@ class Graph(triples: Seq[Triple]) extends Seq[Triple] {
 
   lazy val subjects: Seq[Resource] = triples.map(_.subject).distinct
 
-  def + (∆ : Triple): Graph = Graph(triples :+ ∆)
-
   def contains(subject: Resource, predicate: Predicate, `object`: Node): Boolean =
     triples.contains(Triple(subject, predicate, `object`))
-
-  def filter(subject: Option[Resource] = None, predicate: Option[Predicate] = None, `object`: Option[Node] = None) = Graph {
-    triples.filter { case Triple(s, p, o) =>
-      Seq(subject.map(s.equals), predicate.map(p.equals), `object`.map(o.equals)).flatten.forall(_ == true)
-    }
-  }
 
   override lazy val length: Int = triples.length
   override def apply(index: Int): Triple = triples(index)
   override def iterator: Iterator[Triple] = triples.iterator
+
+  def + (∆ : Triple): Graph = Graph((triples :+ ∆).distinct)
+  def :+ (∆ : Triple): Graph = Graph((triples :+ ∆).distinct)
+  def +: (∆ : Triple): Graph = Graph((∆ +:triples).distinct)
+  def ++ (other : Graph): Graph = Graph((triples ++ other).distinct)
+
+  override def filter(predicate: Triple => Boolean): Graph = Graph(triples.filter(predicate))
+  def transform(partialFunction: PartialFunction[Triple, Triple]): Graph =
+    Graph(triples.collect(partialFunction).distinct)
+
 }
 
 object Graph {
