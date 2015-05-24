@@ -16,6 +16,7 @@ class TurtleUnmarshallerSpec extends Specification {
     val marshaller = implementation.marshaller
 
     s"The ${implementation.name} turtle marshaller" should {
+
       "be able to handle a large turtle file" in new Scope with TestHelpers {
         val turtle = getResource("bbc.ttl")
         val graph = marshaller.fromTurtle(turtle)
