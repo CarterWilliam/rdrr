@@ -10,8 +10,8 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
   }
 
-  override def fromTurtle(turtle: String): RdfGraph = fromTurtle(Source.fromString(turtle).getLines().toStream)
-  def fromTurtle(lines: Stream[String]) = RdfGraph(triplesFromEntities(entitiesFromLines(lines)))
+  override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
+  def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
   private[this] def triplesFromEntities(entities: Stream[String],
                        prefixes: Map[String, String] = Map.empty,

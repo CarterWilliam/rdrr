@@ -9,7 +9,7 @@ class JenaTurtleMarshallerSpec extends Specification {
 
   "The Jena Marshaller" can {
     "serialise to Turtle format" in new JenaTurtleMarshallerScope {
-      val graph = RdfGraph(Triple(
+      val graph = Graph(Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
         Resource("http://purl.org/ontology/mo/MusicArtist") ) )
