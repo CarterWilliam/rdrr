@@ -1,0 +1,6 @@
+@base <https://en.wikipedia.org/wiki/> .
+@prefix : <http://purl.org/ontology/mo/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<Justin_Bieber> a :MusicArtist .
+<Justin_Bieber> foaf:name "Justin Bieber"@en .

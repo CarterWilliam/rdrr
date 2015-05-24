@@ -21,6 +21,13 @@ class TurtleUnmarshallerSpec extends Specification {
         val graph = marshaller.fromTurtle(turtle)
         graph.size must be equalTo 287
       }
+
+      "be able to handle base prefixes" in new Scope with TestHelpers {
+        val turtle = getResource("base-and-empty-prefixes.ttl")
+        val graph = marshaller.fromTurtle(turtle)
+        graph must have size 2
+        graph.subjects must have size 1
+      }
     }
 
   }

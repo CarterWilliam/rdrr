@@ -89,27 +89,26 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case PrefixExtractor(prefix, uri) #:: rest =>
         triplesFromEntities(rest, parserState + Prefix(prefix, uri))
 
-      case entity #:: rest => {
-        parserState.partialTriple match {
-          case EmptyTriple =>
+      case entity #:: rest => parserState.partialTriple match {
+
+        case EmptyTriple =>
             val subjectPartial = Subject(Resource(iriFromTurtle(entity, parserState)))
             triplesFromEntities(rest, parserState.copy(partialTriple = subjectPartial))
 
-          case Subject(subject) =>
-            val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
-            triplesFromEntities(rest, parserState.copy(partialTriple = subjectPredicatePartial))
+        case Subject(subject) =>
+          val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
+          triplesFromEntities(rest, parserState.copy(partialTriple = subjectPredicatePartial))
 
-          case SubjectAndPredicate(subject, predicate) => {
-            entity match {
-              case AnotherObjectNext =>
-                triplesFromEntities(rest, parserState.copy(partialTriple = SubjectAndPredicate(subject, predicate)))
-              case AnotherPredicateNext =>
-                triplesFromEntities(rest, parserState.copy(partialTriple = Subject(subject)))
-              case AnotherSubjectNext =>
-                triplesFromEntities(rest, parserState.copy(partialTriple = EmptyTriple))
-              case resourceTurtle =>
-                Triple(subject, predicate, nodeFromTurtle(resourceTurtle, parserState)) #:: triplesFromEntities(rest, parserState)
-            }
+        case SubjectAndPredicate(subject, predicate) => {
+          entity match {
+            case AnotherObjectNext =>
+              triplesFromEntities(rest, parserState.copy(partialTriple = SubjectAndPredicate(subject, predicate)))
+            case AnotherPredicateNext =>
+              triplesFromEntities(rest, parserState.copy(partialTriple = Subject(subject)))
+            case AnotherSubjectNext =>
+              triplesFromEntities(rest, parserState.copy(partialTriple = EmptyTriple))
+            case resourceTurtle =>
+              Triple(subject, predicate, nodeFromTurtle(resourceTurtle, parserState)) #:: triplesFromEntities(rest, parserState)
           }
         }
       }
@@ -120,15 +119,25 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
 
   private[this] def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
-    val UriResource = "<(.*)>".r
+    val UriResource = "^<([^:/?#]+:.*)>$".r // URI with scheme - RFC 3986
+    val RelativeUriResource = "<(.*)>".r
     val PrefixedResource = "(.*):(.*)".r
 
+    def withPrefix(resource: String)(prefix: RdfPrefix) = prefix.path + resource
+
     turtleRepresentation match {
-      case rdfShorthand if RdfStandardResources.contains(rdfShorthand) => RdfStandardResources(rdfShorthand)
+
+      case rdfStandard if RdfStandardResources.contains(rdfStandard) => RdfStandardResources(rdfStandard)
+
       case UriResource(uri) => uri
-      case PrefixedResource(prefix, name) => parserState.prefixes.find(_.prefix == prefix).map(_.path + name).getOrElse {
+
+      case RelativeUriResource(resource) if parserState.basePrefix.isDefined =>
+        parserState.basePrefix.map(withPrefix(resource)).get
+
+      case PrefixedResource(prefix, name) => parserState.prefixes.find(_.prefix == prefix).map(withPrefix(name)).getOrElse {
         throw new TurtleParseException(s"Resource does not have a prefix with key $prefix in scope")
       }
+
       case unmatched => throw new TurtleParseException(s"turtle representation not in a form understood by the parser: $unmatched")
     }
   }

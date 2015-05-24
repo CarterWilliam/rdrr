@@ -144,6 +144,11 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
         val musicArtistIri = marshaller invokePrivate iriFromTurtle("mo:MusicArtist", parserState)
         musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
       }
+      "from a relative URI turtle resource" in new IriExtractScope {
+        val parserState = ParserState.Empty + BasePrefix("http://purl.org/ontology/mo/")
+        val musicArtistIri = marshaller invokePrivate iriFromTurtle("<MusicArtist>", parserState)
+        musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
+      }
       "from the RDF standard abbrieviation'a'" in new IriExtractScope {
         val typeIri = marshaller invokePrivate iriFromTurtle("a", ParserState.Empty)
         typeIri must be equalTo "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
