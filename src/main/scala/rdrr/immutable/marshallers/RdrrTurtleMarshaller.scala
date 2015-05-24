@@ -6,9 +6,8 @@ import scala.io.Source
 
 object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
-  val RdfStandardResources: Map[String, String] = Map {
-    "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-  }
+  val RdfStandard: Map[String, String] = 
+    Map("a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
@@ -129,7 +128,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     turtleRepresentation match {
 
-      case rdfStandard if RdfStandardResources.contains(rdfStandard) => RdfStandardResources(rdfStandard)
+      case rdfStandard if RdfStandard.contains(rdfStandard) => RdfStandard(rdfStandard)
 
       case UriResource(uri) => uri
 
@@ -144,7 +143,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
   }
 
-  private[this] def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): Node = {
+  private[this] def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): GraphNode = {
     val StringLiteralWithLanguageMatcher = """^"(.*)"@(.*)$""".r
     val SimpleStringLiteralMatcher = """^"(.*)"$""".r
     val StringLiteralWithCustomIRIMatcher = """^"(.*)"\^\^(.*)$""".r
@@ -172,3 +171,36 @@ sealed trait RdfPrefix {
 }
 case class Prefix(prefix: String, path: String) extends RdfPrefix
 case class BasePrefix(path: String) extends RdfPrefix
+
+
+object RdrrTurtleMarshaller extends TurtleMarshaller {
+
+  val RdfStandard: Map[String, String] =
+    Map ("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" -> "a")
+
+  override def toTurtle(graph: Graph): String = graph.foldLeft("") { (output, triple) =>
+    output + s"""${asTurtle(triple.subject)} ${asTurtle(triple.predicate)} ${asTurtle(triple.`object`)} .\n"""
+  }
+
+  private[this] def asUriTurtle(rdfEntity: RdfEntity{ def uri: String }) =
+    s"""<${rdfEntity.uri}>"""
+  private[this] def asStandardStringLiteralTurtle(stringLiteral: StringLiteral) =
+    s""""${stringLiteral.value}""""
+  private[this] def asNonStandardStringLiteralTurtle(literal: NonStandardStringLiteral) =
+    s"""${asStandardStringLiteralTurtle(literal)}^^${asUriTurtle(literal.datatype)}"""
+  private[this] def asLanguageStringLiteralTurtle(literal: LanguageStringLiteral) =
+    s""""${literal.value}"@${literal.language}"""
+  private[this] def asLiteralTurtle(literal: Literal) =
+    s"""${literal.value}^^${asUriTurtle(literal.datatype)}"""
+
+
+  private[this] def asTurtle(entity: RdfEntity): String = entity match {
+    case resource: Resource => asUriTurtle(resource)
+    case predicate: Predicate => RdfStandard.getOrElse(predicate.uri, asUriTurtle(predicate))
+    case string: StandardStringLiteral => asStandardStringLiteralTurtle(string)
+    case nonStandardString: NonStandardStringLiteral => asNonStandardStringLiteralTurtle(nonStandardString)
+    case languageString: LanguageStringLiteral => asLanguageStringLiteralTurtle(languageString)
+    case otherLiteral: Literal => asLiteralTurtle(otherLiteral)
+  }
+
+}

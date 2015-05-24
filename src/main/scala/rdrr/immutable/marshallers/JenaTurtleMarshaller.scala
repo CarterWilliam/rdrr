@@ -52,7 +52,7 @@ class JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
       jenaModel.createProperty(predicate.uri)
     }
 
-    implicit def nodeJenaConversion(node: Node): JenaNode = node match {
+    implicit def nodeJenaConversion(node: GraphNode): JenaNode = node match {
       case resource: Resource => resourceJenaConversion(resource)
       case _ => jenaModel.createLiteral("literal")
     }
