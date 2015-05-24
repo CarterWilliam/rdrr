@@ -1,7 +1,8 @@
 @base <https://en.wikipedia.org/wiki/> .
 @prefix : <http://purl.org/ontology/mo/> .
 
-<Justin_Bieber> a :MusicArtist .
+<Justin_Bieber> a   # fool! haha
+  :MusicArtist .
 
 @base <http://xmlns.com/foaf/0.1/> .
 

@@ -16,6 +16,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
     val EmptyLine = """^\s*$""".r
+    val CommentLine = """^\s*#.*$""".r
     val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
     val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
     val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
@@ -25,8 +26,9 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     lines match {
 
-      case EmptyLine() #:: moreLines =>
-        entitiesFromLines(moreLines)
+      case EmptyLine() #:: moreLines => entitiesFromLines(moreLines)
+
+      case CommentLine() #:: moreLines => entitiesFromLines(moreLines)
 
       case PrefixLine(prefixLine) #:: moreLines =>
         prefixLine #:: entitiesFromLines(moreLines)

@@ -27,7 +27,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
 
     "extract entities from lines" in {
 
-      "from lines containing resources with full IRIs" in new EntitiesFromLinesScope {
+      "containing resources with full IRIs" in new EntitiesFromLinesScope {
         val resourceString =
           """
             |<https://en.wikipedia.org/wiki/Justin_Bieber>
@@ -40,7 +40,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           "." )
       }
 
-      "from lines containing prefixed resources" in new EntitiesFromLinesScope {
+      "containing prefixed resources" in new EntitiesFromLinesScope {
         val resourceString =
           """
             |@prefix wiki: <https://en.wikipedia.org/wiki/> .
@@ -52,7 +52,8 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           "@prefix mo: <http://purl.org/ontology/mo/> .",
           "wiki:Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
-      "from lines containing base-prefixed resources" in new EntitiesFromLinesScope {
+
+      "containing base-prefixed resources" in new EntitiesFromLinesScope {
         val resourceString =
           """
             |@base wiki: <https://en.wikipedia.org/wiki/> .
@@ -63,32 +64,38 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
 
-      "from lines containing String literals" in {
+      "containing String literals" in {
+
         "with whitespace" in new EntitiesFromLinesScope {
           val line = "  \"Justin Bieber\" ."
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"Justin Bieber\"", ".")
         }
+
         "with whitespace and language tag" in new EntitiesFromLinesScope {
           val line = "  \"Justin Bieber\"@en-gb ,"
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"Justin Bieber\"@en-gb", ",")
         }
+
         "enclosed with apostrophes" in new EntitiesFromLinesScope {
           val line = "  'Justin Bieber'@en ."
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("'Justin Bieber'@en", ".")
         }
+
         "enclosed with triple-quotes" in new EntitiesFromLinesScope {
           val line = " \"\"\" '''''\" \"''''' \"\"\" ."
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"\"\" '''''\" \"''''' \"\"\"", ".")
         }
+
         "enclosed with triple-apostrophes" in new EntitiesFromLinesScope {
           val line = """ ''' quotes '@en ' quotes ''',"""
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("''' quotes '@en ' quotes '''", ",")
         }
+
         "enclosed with triple apostrophes and spanning several lines" in new EntitiesFromLinesScope {
           val multilineString =
             """ ''' start
@@ -96,6 +103,7 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
           val splitResources = marshaller invokePrivate entitiesFromLines(multilineString.lines.toStream)
           splitResources must be equalTo Stream("''' start\nend'''@en", ".")
         }
+
         "enclosed with triple quotes and spanning several lines" in new EntitiesFromLinesScope {
           val tripleQuote = "\"\"\""
           val multilineString =
@@ -106,22 +114,38 @@ class RdrrTurtleMarshallerSpec extends Specification with PrivateMethodTester {
         }
       }
 
-      "from lines containing 'punctuation' characters immediately after" in {
+      "containing 'punctuation' characters immediately after" in {
+
         "a resource" in new EntitiesFromLinesScope {
           val line = "  <http://purl.org/ontology/mo/MusicArtist>."
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("<http://purl.org/ontology/mo/MusicArtist>", ".")
         }
+
         "a string literal" in new EntitiesFromLinesScope {
           val line = """  "string literal", """
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"string literal\"", ",")
         }
+
         "a complex string literal" in new EntitiesFromLinesScope {
           val line = """  "string literal"@en; """
           val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"string literal\"@en", ";")
         }
+
+      }
+
+      "ignoring full line comments" in new EntitiesFromLinesScope {
+        val lines = Stream("<Justin_Bieber> a ", "# fool haha!", "mo:Artist", ".")
+        val splitResources = marshaller invokePrivate entitiesFromLines(lines)
+        splitResources must be equalTo Stream("<Justin_Bieber>", "a", "mo:Artist", ".")
+      }
+
+      "ignoring inline comments" in new EntitiesFromLinesScope {
+        val lines = Stream("<Justin_Bieber> a # fool haha!", "mo:Artist", ".")
+        val splitResources = marshaller invokePrivate entitiesFromLines(lines)
+        splitResources must be equalTo Stream("<Justin_Bieber>", "a", "mo:Artist", ".")
       }
 
       "and throw an exception if the line is unrecognised" in new EntitiesFromLinesScope {
