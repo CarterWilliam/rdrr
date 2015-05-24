@@ -4,7 +4,7 @@ import rdrr.immutable._
 
 import scala.io.Source
 
-class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
+object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val RdfStandardResources: Map[String, String] = Map {
     "a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -13,40 +13,102 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
-  private[this] def triplesFromEntities(entities: Stream[String],
-                       prefixes: Map[String, String] = Map.empty,
-                       partialTriple: PartialTriple = EmptyTriple): Stream[Triple] = {
 
-    val Prefix = """^@prefix\s+(.*):\s*<(.*)>\s*\.$""".r
+  private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
+    val EmptyLine = """^\s*$""".r
+    val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
+    val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
+    val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
+    val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
+    val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
+    val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
+
+    lines match {
+
+      case EmptyLine() #:: moreLines =>
+        entitiesFromLines(moreLines)
+
+      case PrefixLine(prefixLine) #:: moreLines =>
+        prefixLine #:: entitiesFromLines(moreLines)
+
+      case EntityEtc(resource, etc) #:: moreLines =>
+        resource #:: entitiesFromLines(etc #:: moreLines)
+
+      case TripleQuotedStringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
+        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
+
+      case MultilineStringLiteralBegin(stringStart, quoteType) #:: nextLine #:: moreLines =>
+        entitiesFromLines(s"$stringStart\n$nextLine" #:: moreLines)
+
+      case StringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
+        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
+
+      case PunctuationEtc(punctuation, etc) #:: moreLines =>
+        punctuation #:: entitiesFromLines(etc #:: moreLines)
+
+      case Stream.Empty => Stream.Empty
+
+      case unmatchedLine #:: rest =>
+        throw new TurtleParseException(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
+    }
+  }
+
+  case class ParserState(prefixes: Seq[Prefix], basePrefix: Option[BasePrefix], partialTriple: PartialTriple) {
+    def + (prefix: RdfPrefix): ParserState = prefix match {
+      case basePrefix: BasePrefix =>
+        copy(basePrefix = Some(basePrefix))
+      case standardPrefix: Prefix =>
+        val updatePrefixes = prefixes.filter(_.prefix != standardPrefix.prefix) :+ standardPrefix
+        copy(prefixes = updatePrefixes)
+    }
+  }
+
+  object ParserState {
+    val Empty = ParserState(Nil, None, EmptyTriple)
+  }
+
+  sealed abstract class PartialTriple
+  object EmptyTriple extends PartialTriple
+  case class Subject(subject: Resource) extends PartialTriple
+  case class SubjectAndPredicate(subject: Resource, predicate: Predicate) extends PartialTriple
+
+  private[this] def triplesFromEntities(entities: Stream[String],
+                                        parserState: ParserState = ParserState.Empty): Stream[Triple] = {
+
+    val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
+    val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
     val AnotherPredicateNext = ";"
     val AnotherObjectNext = ","
     val AnotherSubjectNext = "."
 
     entities match {
 
-      case Prefix(prefix, uri) #:: rest =>
-        triplesFromEntities(rest, prefixes + (prefix -> uri), partialTriple)
+      case BasePrefixExtractor(path) #:: rest =>
+        triplesFromEntities(rest, parserState + BasePrefix(path))
+
+      case PrefixExtractor(prefix, uri) #:: rest =>
+        triplesFromEntities(rest, parserState + Prefix(prefix, uri))
 
       case entity #:: rest => {
-        partialTriple match {
+        parserState.partialTriple match {
           case EmptyTriple =>
-            val subjectPartial = Subject(Resource(iriFromTurtleRepresentation(entity, prefixes)))
-            triplesFromEntities(rest, prefixes, subjectPartial)
+            val subjectPartial = Subject(Resource(iriFromTurtle(entity, parserState)))
+            triplesFromEntities(rest, parserState.copy(partialTriple = subjectPartial))
 
           case Subject(subject) =>
-            val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtleRepresentation(entity, prefixes)))
-            triplesFromEntities(rest, prefixes, subjectPredicatePartial)
+            val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
+            triplesFromEntities(rest, parserState.copy(partialTriple = subjectPredicatePartial))
 
           case SubjectAndPredicate(subject, predicate) => {
             entity match {
               case AnotherObjectNext =>
-                triplesFromEntities(rest, prefixes, SubjectAndPredicate(subject, predicate))
+                triplesFromEntities(rest, parserState.copy(partialTriple = SubjectAndPredicate(subject, predicate)))
               case AnotherPredicateNext =>
-                triplesFromEntities(rest, prefixes, Subject(subject))
+                triplesFromEntities(rest, parserState.copy(partialTriple = Subject(subject)))
               case AnotherSubjectNext =>
-                triplesFromEntities(rest, prefixes, EmptyTriple)
+                triplesFromEntities(rest, parserState.copy(partialTriple = EmptyTriple))
               case resourceTurtle =>
-                Triple(subject, predicate, nodeFromTurtle(resourceTurtle, prefixes)) #:: triplesFromEntities(rest, prefixes, partialTriple)
+                Triple(subject, predicate, nodeFromTurtle(resourceTurtle, parserState)) #:: triplesFromEntities(rest, parserState)
             }
           }
         }
@@ -57,63 +119,21 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   }
 
 
-  private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
-    val PrefixLine = """^\s*(@(?:base|prefix)\s+.*\.)\s*$""".r
-    val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
-    val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
-    val MultilineStringLiteralStart = "^\\s*((\"\"\"|''').*)".r
-    val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r
-    val ResourceEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r
-    val WhitespaceLine = """^(\s*)$""".r
-
-    lines match {
-
-      case line #:: moreLines if line.isEmpty =>
-        entitiesFromLines(moreLines)
-
-      case PrefixLine(prefixLine) #:: moreLines =>
-        prefixLine #:: entitiesFromLines(moreLines)
-
-      case PunctuationEtc(punctuation, etc) #:: moreLines =>
-        punctuation #:: entitiesFromLines(etc #:: moreLines)
-
-      case TripleQuotedStringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
-        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
-
-      case MultilineStringLiteralStart(stringStart, quoteType) #:: nextLine #:: moreLines =>
-        entitiesFromLines(s"$stringStart\n$nextLine" #:: moreLines)
-
-      case StringLiteralEtc(stringLiteral, quoteType, etc) #:: moreLines =>
-        stringLiteral #:: entitiesFromLines(etc #:: moreLines)
-
-      case ResourceEtc(resource, etc) #:: moreLines =>
-        resource #:: entitiesFromLines(etc #:: moreLines)
-
-      case WhitespaceLine(_) #:: moreLines =>
-        entitiesFromLines(moreLines)
-
-      case Stream.Empty => Stream.Empty
-
-      case unmatchedLine #:: rest =>
-        throw new TurtleParseException(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
-    }
-  }
-
-  private[this] def iriFromTurtleRepresentation(turtleRepresentation: String, prefixedIris: Map[String, String]): String = {
+  private[this] def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
     val UriResource = "<(.*)>".r
     val PrefixedResource = "(.*):(.*)".r
 
     turtleRepresentation match {
       case rdfShorthand if RdfStandardResources.contains(rdfShorthand) => RdfStandardResources(rdfShorthand)
       case UriResource(uri) => uri
-      case PrefixedResource(prefix, name) => prefixedIris.get(prefix).map(_ + name).getOrElse {
-        throw new TurtleParseException(s"Resource does not have given prefix defined in the document: $prefix")
+      case PrefixedResource(prefix, name) => parserState.prefixes.find(_.prefix == prefix).map(_.path + name).getOrElse {
+        throw new TurtleParseException(s"Resource does not have a prefix with key $prefix in scope")
       }
       case unmatched => throw new TurtleParseException(s"turtle representation not in a form understood by the parser: $unmatched")
     }
   }
 
-  private[this] def nodeFromTurtle(turtleRepresentation: String, prefixedIris: Map[String, String]): Node = {
+  private[this] def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): Node = {
     val StringLiteralWithLanguageMatcher = """^"(.*)"@(.*)$""".r
     val SimpleStringLiteralMatcher = """^"(.*)"$""".r
     val StringLiteralWithCustomIRIMatcher = """^"(.*)"\^\^(.*)$""".r
@@ -126,21 +146,18 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case StringLiteralWithLanguageMatcher(string, language) => LanguageStringLiteral(string, language)
       case SimpleStringLiteralMatcher(string) => StandardStringLiteral(string)
       case StringLiteralWithCustomIRIMatcher(string, turtleResource) =>
-        NonStandardStringLiteral(string, iriFromTurtleRepresentation(turtleResource, prefixedIris))
+        NonStandardStringLiteral(string, iriFromTurtle(turtleResource, parserState))
       case BooleanLiteralMatcher(boolean) => BooleanLiteral(boolean.toBoolean)
       case IntegerLiteralMatcher(integer) => IntegerLiteral(integer.toInt)
       case DecimalLiteralMatcher(decimal) => DecimalLiteral(decimal.toDouble)
-      case _ => Resource(iriFromTurtleRepresentation(turtleRepresentation, prefixedIris))
+      case _ => Resource(iriFromTurtle(turtleRepresentation, parserState))
     }
   }
 
 }
 
-case class Prefix(prefix: String, uri: String)
-
-sealed abstract class PartialTriple
-object EmptyTriple extends PartialTriple
-case class Subject(subject: Resource) extends PartialTriple
-case class SubjectAndPredicate(subject: Resource, predicate: Predicate) extends PartialTriple
-
-
+sealed trait RdfPrefix {
+  def path: String
+}
+case class Prefix(prefix: String, path: String) extends RdfPrefix
+case class BasePrefix(path: String) extends RdfPrefix

@@ -94,7 +94,7 @@ class DemonstrationSpec extends FunSpec with MustMatchers {
       |
     """.stripMargin
 
-  val marshaller = new RdrrTurtleUnmarshaller
+  val marshaller = RdrrTurtleUnmarshaller
   val graph = marshaller.fromTurtle(turtle)
 
 

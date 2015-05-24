@@ -8,7 +8,7 @@ class TurtleUnmarshallerSpec extends Specification {
 
   case class MarshallerImplementation(name: String, marshaller: TurtleUnmarshaller)
 
-  val rdrrImplementation = MarshallerImplementation("RDRR", new RdrrTurtleUnmarshaller)
+  val rdrrImplementation = MarshallerImplementation("RDRR", RdrrTurtleUnmarshaller)
   val jenaImplementation = MarshallerImplementation("Jena", new JenaTurtleUnmarshaller)
 
   Seq(jenaImplementation, rdrrImplementation).foreach { implementation =>
