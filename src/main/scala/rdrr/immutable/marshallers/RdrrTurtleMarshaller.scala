@@ -178,9 +178,9 @@ object RdrrTurtleMarshaller extends TurtleMarshaller {
   val RdfStandard: Map[String, String] =
     Map ("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" -> "a")
 
-  override def toTurtle(graph: Graph): String = graph.foldLeft("") { (output, triple) =>
-    output + s"""${asTurtle(triple.subject)} ${asTurtle(triple.predicate)} ${asTurtle(triple.`object`)} .\n"""
-  }
+  override def toTurtle(graph: Graph): String = graph.foldLeft(new StringBuilder) { (out, triple) =>
+    out ++= s"""${asTurtle(triple.subject)} ${asTurtle(triple.predicate)} ${asTurtle(triple.`object`)} .\n"""
+  }.toString()
 
   private[this] def asUriTurtle(rdfEntity: RdfEntity{ def uri: String }) =
     s"""<${rdfEntity.uri}>"""
