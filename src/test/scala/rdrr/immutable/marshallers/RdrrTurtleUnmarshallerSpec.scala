@@ -9,21 +9,7 @@ import utilities.TestHelpers
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {
 
-  "The Turtle Marshaller" can {
-
-    "marshal from" in {
-      "triples with Resources from Turtle" in new RdrrTurtleUnmarshallerScope {
-        val turtle = getResource("bieber-is-an-artist.ttl")
-        val graph = marshaller.fromTurtle(turtle)
-        graph must have size 1
-      }
-
-      "triples with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {
-        val turtle = getResource("bieber.ttl")
-        val graph = marshaller.fromTurtle(turtle)
-        graph must have size 3
-      }
-    }
+  "The RDRR Turtle Unmarshaller" should {
 
     "extract entities from lines" in {
 
@@ -32,7 +18,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           """
             |<https://en.wikipedia.org/wiki/Justin_Bieber>
             |  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.org/ontology/mo/MusicArtist> .""".stripMargin
-        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream(
           "<https://en.wikipedia.org/wiki/Justin_Bieber>",
           "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>",
@@ -46,7 +32,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
             |@prefix wiki: <https://en.wikipedia.org/wiki/> .
             |@prefix mo: <http://purl.org/ontology/mo/> .
             |wiki:Justin_Bieber a mo:MusicArtist .""".stripMargin
-        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream(
           "@prefix wiki: <https://en.wikipedia.org/wiki/> .",
           "@prefix mo: <http://purl.org/ontology/mo/> .",
@@ -58,7 +44,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           """
             |@base wiki: <https://en.wikipedia.org/wiki/> .
             |:Justin_Bieber a mo:MusicArtist .""".stripMargin
-        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream(
           "@base wiki: <https://en.wikipedia.org/wiki/> .",
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
@@ -68,7 +54,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
         val resourceString =
           """
             |    _:someone a mo:MusicArtist .""".stripMargin
-        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream("_:someone", "a", "mo:MusicArtist", ".")
       }
 
@@ -76,31 +62,31 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
         "with whitespace" in new EntitiesFromLinesScope {
           val line = "  \"Justin Bieber\" ."
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"Justin Bieber\"", ".")
         }
 
         "with whitespace and language tag" in new EntitiesFromLinesScope {
           val line = "  \"Justin Bieber\"@en-gb ,"
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"Justin Bieber\"@en-gb", ",")
         }
 
         "enclosed with apostrophes" in new EntitiesFromLinesScope {
           val line = "  'Justin Bieber'@en ."
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("'Justin Bieber'@en", ".")
         }
 
         "enclosed with triple-quotes" in new EntitiesFromLinesScope {
           val line = " \"\"\" '''''\" \"''''' \"\"\" ."
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"\"\" '''''\" \"''''' \"\"\"", ".")
         }
 
         "enclosed with triple-apostrophes" in new EntitiesFromLinesScope {
           val line = """ ''' quotes '@en ' quotes ''',"""
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("''' quotes '@en ' quotes '''", ",")
         }
 
@@ -108,7 +94,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           val multilineString =
             """ ''' start
               |end'''@en . """.stripMargin
-          val splitResources = marshaller invokePrivate entitiesFromLines(multilineString.lines.toStream)
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(multilineString.lines.toStream)
           splitResources must be equalTo Stream("''' start\nend'''@en", ".")
         }
 
@@ -117,7 +103,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           val multilineString =
             s""" $tripleQuote start
               |end$tripleQuote@en. """.stripMargin
-          val splitResources = marshaller invokePrivate entitiesFromLines(multilineString.lines.toStream)
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(multilineString.lines.toStream)
           splitResources must be equalTo Stream(s"$tripleQuote start\nend$tripleQuote@en", ".")
         }
       }
@@ -126,19 +112,19 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
         "a resource" in new EntitiesFromLinesScope {
           val line = "  <http://purl.org/ontology/mo/MusicArtist>."
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("<http://purl.org/ontology/mo/MusicArtist>", ".")
         }
 
         "a string literal" in new EntitiesFromLinesScope {
           val line = """  "string literal", """
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"string literal\"", ",")
         }
 
         "a complex string literal" in new EntitiesFromLinesScope {
           val line = """  "string literal"@en; """
-          val splitResources = marshaller invokePrivate entitiesFromLines(Stream(line))
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(line))
           splitResources must be equalTo Stream("\"string literal\"@en", ";")
         }
 
@@ -146,19 +132,19 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
       "ignoring full line comments" in new EntitiesFromLinesScope {
         val lines = Stream("<Justin_Bieber> a ", "# fool haha!", "mo:Artist", ".")
-        val splitResources = marshaller invokePrivate entitiesFromLines(lines)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(lines)
         splitResources must be equalTo Stream("<Justin_Bieber>", "a", "mo:Artist", ".")
       }
 
       "ignoring inline comments" in new EntitiesFromLinesScope {
         val lines = Stream("<Justin_Bieber> a # fool haha!", "mo:Artist", ".")
-        val splitResources = marshaller invokePrivate entitiesFromLines(lines)
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(lines)
         splitResources must be equalTo Stream("<Justin_Bieber>", "a", "mo:Artist", ".")
       }
 
       "and throw an exception if the line is unrecognised" in new EntitiesFromLinesScope {
         val lines = Stream("  \"unclosed string literal .")
-        marshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseException].like { case TurtleParseException(message) =>
+        unmarshaller invokePrivate entitiesFromLines(lines) must throwA[TurtleParseException].like { case TurtleParseException(message) =>
           message must be equalTo s"RDRR Turtle Marshaller could not parse the line: '${lines.head}'"
         }
       }
@@ -168,75 +154,75 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
     "extract uris" in {
       "from a turtle resource in IRI format" in new IriExtractScope {
-        val typeIri = marshaller invokePrivate iriFromTurtle("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", ParserState.Empty)
+        val typeIri = unmarshaller invokePrivate iriFromTurtle("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", ParserState.Empty)
         typeIri must be equalTo "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
       "from a turtle resource in prefix:name format" in new IriExtractScope {
         val parserState = ParserState.Empty + Prefix("mo", "http://purl.org/ontology/mo/")
-        val musicArtistIri = marshaller invokePrivate iriFromTurtle("mo:MusicArtist", parserState)
+        val musicArtistIri = unmarshaller invokePrivate iriFromTurtle("mo:MusicArtist", parserState)
         musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
       }
       "from a relative URI turtle resource" in new IriExtractScope {
         val parserState = ParserState.Empty + BasePrefix("http://purl.org/ontology/mo/")
-        val musicArtistIri = marshaller invokePrivate iriFromTurtle("<MusicArtist>", parserState)
+        val musicArtistIri = unmarshaller invokePrivate iriFromTurtle("<MusicArtist>", parserState)
         musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
       }
       "from the RDF standard abbrieviation'a'" in new IriExtractScope {
-        val typeIri = marshaller invokePrivate iriFromTurtle("a", ParserState.Empty)
+        val typeIri = unmarshaller invokePrivate iriFromTurtle("a", ParserState.Empty)
         typeIri must be equalTo "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
       "throwing an exception if a prefixed resource has no matching prefix" in new IriExtractScope {
-        marshaller invokePrivate iriFromTurtle("mo:MusicArtist", ParserState.Empty) must throwA[TurtleParseException]
+        unmarshaller invokePrivate iriFromTurtle("mo:MusicArtist", ParserState.Empty) must throwA[TurtleParseException]
       }
       "throwing an exception if a resource is not in a recognised format" in new IriExtractScope {
-        marshaller invokePrivate iriFromTurtle("moMusicArtist", ParserState.Empty) must throwA[TurtleParseException]
+        unmarshaller invokePrivate iriFromTurtle("moMusicArtist", ParserState.Empty) must throwA[TurtleParseException]
       }
     }
 
     "create resources" in {
       "from a standard resource" in new CreateResourcesScope {
-        marshaller invokePrivate resourceFromTurtle("<urn:name:me>", ParserState.Empty) must be equalTo Resource("urn:name:me")
+        unmarshaller invokePrivate resourceFromTurtle("<urn:name:me>", ParserState.Empty) must be equalTo Resource("urn:name:me")
       }
       "from a labeled blank node" in new CreateResourcesScope {
-        marshaller invokePrivate resourceFromTurtle("_:someone", ParserState.Empty) must be equalTo BlankNode("someone")
+        unmarshaller invokePrivate resourceFromTurtle("_:someone", ParserState.Empty) must be equalTo BlankNode("someone")
       }
     }
 
     "create literals" in {
       "from a turtle string without a language" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"", ParserState.Empty)
         literal must be equalTo StandardStringLiteral("Justin Bieber")
       }
       "from a turtle string with a language" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("\"Justine Biebere\"@fr", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("\"Justine Biebere\"@fr", ParserState.Empty)
         literal must be equalTo LanguageStringLiteral("Justine Biebere", "fr")
       }
       "from a turtle string with a custom IRI" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"^^<http://www.crazyencodings.co.uk/encoding>", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"^^<http://www.crazyencodings.co.uk/encoding>", ParserState.Empty)
         literal must be equalTo NonStandardStringLiteral("Justin Bieber", "http://www.crazyencodings.co.uk/encoding")
       }
       "from a turtle boolean" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("false", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("false", ParserState.Empty)
         literal must be equalTo BooleanLiteral(false)
       }
       "from a turtle integer" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("684", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("684", ParserState.Empty)
         literal must be equalTo IntegerLiteral(684)
       }
       "from an explicitly positive turtle integer" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("+684", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("+684", ParserState.Empty)
         literal must be equalTo IntegerLiteral(684)
       }
       "from a negative turtle integer" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("-684", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("-684", ParserState.Empty)
         literal must be equalTo IntegerLiteral(-684)
       }
       "from a turtle decimal" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("6.84", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("6.84", ParserState.Empty)
         literal must be equalTo DecimalLiteral(6.84)
       }
       "from a negative turtle decimal" in new CreateLiteralsScope {
-        val literal = marshaller invokePrivate nodeFromTurtle("-6.84", ParserState.Empty)
+        val literal = unmarshaller invokePrivate nodeFromTurtle("-6.84", ParserState.Empty)
         literal must be equalTo DecimalLiteral(-6.84)
       }
     }
@@ -277,10 +263,38 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       initialState + basePrefix2 must be equalTo expectedState
     }
   }
+
+
+  "marshal from" in {
+
+    "a graph with Resources from Turtle" in new RdrrTurtleUnmarshallerScope {
+      val turtle = getResource("bieber-is-an-artist.ttl")
+      val graph = unmarshaller.fromTurtle(turtle)
+      graph must have size 1
+    }
+
+    "a graph with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {
+      val turtle = getResource("bieber.ttl")
+      val graph = unmarshaller.fromTurtle(turtle)
+      graph must have size 3
+    }
+
+    "a graph with blank nodes" in new Scope with TestHelpers {
+      // The Jena marshaller does not seem to extract the labels given in the turtle
+      val blankNodeTurtle = getResource("labeled-blank-nodes.ttl")
+      val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
+      graph(0).subject must be equalTo BlankNode("alice")
+      graph(0).`object` must be equalTo BlankNode("bob")
+      graph(1).subject must be equalTo BlankNode("bob")
+      graph(1).`object` must be equalTo BlankNode("alice")
+    }
+
+  }
+
 }
 
 trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
-  val marshaller = RdrrTurtleUnmarshaller
+  val unmarshaller = RdrrTurtleUnmarshaller
 }
 
 trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {

@@ -46,14 +46,19 @@ class RdrrTurtleMarshallerSpec extends Specification {
       marshaller invokePrivate asTurtle(booleanLiteral) must be equalTo "true^^<http://www.w3.org/TR/xmlschema-2/#boolean>"
     }
 
-    "serialise Integer literals to turtle" in new RdrrTurtleMarshallerScope {
+    "serialise integer literals to turtle" in new RdrrTurtleMarshallerScope {
       val integerLiteral = IntegerLiteral(8)
       marshaller invokePrivate asTurtle(integerLiteral) must be equalTo "8^^<http://www.w3.org/2001/XMLSchema#integer>"
     }
 
-    "serialise Decimal literals to turtle" in new RdrrTurtleMarshallerScope {
+    "serialise decimal literals to turtle" in new RdrrTurtleMarshallerScope {
       val decimalLiteral = DecimalLiteral(3.14159)
       marshaller invokePrivate asTurtle(decimalLiteral) must be equalTo "3.14159^^<http://www.w3.org/2001/XMLSchema#decimal>"
+    }
+
+    "serialise blank nodes to turtle" in new RdrrTurtleMarshallerScope {
+      val blankNode = BlankNode("label")
+      marshaller invokePrivate asTurtle(blankNode) must be equalTo "_:label"
     }
 
     "serialise to Turtle format" in new RdrrTurtleMarshallerScope {
@@ -89,8 +94,19 @@ class RdrrTurtleMarshallerSpec extends Specification {
         """.stripMargin
 
       marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
-
     }
+
+    "correctly output labeled blank nodes" in new RdrrTurtleMarshallerScope {
+      val graph = Graph(Triple(
+        subject = BlankNode("some_num"),
+        predicate = Predicate("http://maths.org/greaterThan"),
+        `object` = Resource("http://maths.org/Aleph0") ) )
+
+      val expected = """_:some_num <http://maths.org/greaterThan> <http://maths.org/Aleph0> ."""
+
+      marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
+    }
+
   }
 
 }

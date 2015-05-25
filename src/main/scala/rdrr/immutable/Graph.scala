@@ -6,7 +6,7 @@ class Graph(triples: Seq[Triple]) extends Seq[Triple] {
 
   lazy val subjects: Seq[RdfResource] = triples.map(_.subject).distinct
 
-  def contains(subject: Resource, predicate: Predicate, `object`: GraphNode): Boolean =
+  def contains(subject: RdfResource, predicate: Predicate, `object`: GraphNode): Boolean =
     triples.contains(Triple(subject, predicate, `object`))
 
   override lazy val length: Int = triples.length

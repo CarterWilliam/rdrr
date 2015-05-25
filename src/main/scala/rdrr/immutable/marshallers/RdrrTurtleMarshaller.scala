@@ -49,24 +49,25 @@ object RdrrTurtleMarshaller extends TurtleMarshaller {
     }
   }
 
-  private[this] def asUriTurtle(rdfEntity: RdfEntity{ def uri: String }) =
-    s"""<${rdfEntity.uri}>"""
-  private[this] def asStandardStringLiteralTurtle(stringLiteral: StringLiteral) =
-    s""""${stringLiteral.value}""""
-  private[this] def asNonStandardStringLiteralTurtle(literal: NonStandardStringLiteral) =
-    s"""${asStandardStringLiteralTurtle(literal)}^^${asUriTurtle(literal.datatype)}"""
-  private[this] def asLanguageStringLiteralTurtle(literal: LanguageStringLiteral) =
-    s""""${literal.value}"@${literal.language}"""
+  private[this] def asUriTurtle(uri: String) =
+    s"""<$uri>"""
+  private[this] def asStandardStringLiteralTurtle(content: String) =
+    s""""$content""""
+  private[this] def asNonStandardStringLiteralTurtle(content: String, datatype: Resource) =
+    s"""${asStandardStringLiteralTurtle(content)}^^${asUriTurtle(datatype.uri)}"""
+  private[this] def asLanguageStringLiteralTurtle(content: String, language: String) =
+    s""""$content"@$language"""
   private[this] def asLiteralTurtle(literal: Literal) =
-    s"""${literal.value}^^${asUriTurtle(literal.datatype)}"""
+    s"""${literal.value}^^${asUriTurtle(literal.datatype.uri)}"""
 
 
   private[this] def asTurtle(entity: RdfEntity): String = entity match {
-    case resource: Resource => asUriTurtle(resource)
-    case predicate: Predicate => RdfStandard.getOrElse(predicate.uri, asUriTurtle(predicate))
-    case string: StandardStringLiteral => asStandardStringLiteralTurtle(string)
-    case nonStandardString: NonStandardStringLiteral => asNonStandardStringLiteralTurtle(nonStandardString)
-    case languageString: LanguageStringLiteral => asLanguageStringLiteralTurtle(languageString)
+    case Resource(uri) => asUriTurtle(uri)
+    case Predicate(uri) => RdfStandard.getOrElse(uri, asUriTurtle(uri))
+    case BlankNode(label) => s"""_:$label"""
+    case StandardStringLiteral(content) => asStandardStringLiteralTurtle(content)
+    case NonStandardStringLiteral(string, datatype) => asNonStandardStringLiteralTurtle(string, datatype)
+    case LanguageStringLiteral(content, language) => asLanguageStringLiteralTurtle(content, language)
     case otherLiteral: Literal => asLiteralTurtle(otherLiteral)
   }
 

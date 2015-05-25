@@ -2,7 +2,7 @@ package rdrr.immutable.marshallers
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import rdrr.immutable.{BlankNode, Graph}
+import rdrr.immutable.{Resource, Predicate, BlankNode, Graph, Triple}
 import utilities.TestHelpers
 
 class TurtleMarshallerSpec extends Specification {
@@ -18,7 +18,7 @@ class TurtleMarshallerSpec extends Specification {
 
     s"The ${implementation.name} turtle marshaller" should {
 
-      "correctly output the empty graph" in new Scope with TestHelpers {
+      "correctly output the empty graph" in {
         marshaller.toTurtle(Graph.Empty) must be equalTo ""
       }
     }
@@ -52,18 +52,6 @@ class TurtleMarshallerSpec extends Specification {
       (graph(0).subject, graph(1).`object`) must beLike {
         case (BlankNode(label1), BlankNode(label2)) => label1 must be equalTo label2
       }
-    }
-  }
-
-  "The RDRR turtle unmarshaller" should {
-    "be able to handle labelled blank nodes" in new Scope with TestHelpers {
-      // The Jena marshaller does not seem to extract the labels given in the turtle
-      val blankNodeTurtle = getResource("labeled-blank-nodes.ttl")
-      val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
-      graph(0).subject must be equalTo BlankNode("alice")
-      graph(0).`object` must be equalTo BlankNode("bob")
-      graph(1).subject must be equalTo BlankNode("bob")
-      graph(1).`object` must be equalTo BlankNode("alice")
     }
   }
 
