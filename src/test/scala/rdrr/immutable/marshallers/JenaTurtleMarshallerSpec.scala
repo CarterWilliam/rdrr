@@ -20,7 +20,7 @@ class JenaTurtleMarshallerSpec extends Specification {
 }
 
 trait JenaTurtleMarshallerScope extends Scope with TestHelpers {
-  val marshaller = new JenaTurtleMarshaller()
+  val marshaller = JenaTurtleMarshaller
 }
 
 
@@ -36,7 +36,7 @@ class JenaTurtleUnmarshallerSpec extends Specification {
 }
 
 trait JenaTurtleUnmarshallerScope extends Scope with TestHelpers {
-  val unmarshaller = new JenaTurtleUnmarshaller()
+  val unmarshaller = JenaTurtleUnmarshaller
 }
 
 

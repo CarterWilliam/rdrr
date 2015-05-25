@@ -1,7 +1,7 @@
 package rdrr.immutable
 
 import org.scalatest.{FunSpec, MustMatchers}
-import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller
+import rdrr.immutable.marshallers.{RdrrTurtleMarshaller, RdrrTurtleUnmarshaller}
 
 class DemonstrationSpec extends FunSpec with MustMatchers {
 
@@ -94,8 +94,7 @@ class DemonstrationSpec extends FunSpec with MustMatchers {
       |
     """.stripMargin
 
-  val marshaller = RdrrTurtleUnmarshaller
-  val graph = marshaller.fromTurtle(turtle)
+  val graph = RdrrTurtleUnmarshaller.fromTurtle(turtle)
 
 
   object RdfOntology {

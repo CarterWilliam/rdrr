@@ -4,7 +4,7 @@ import rdrr.immutable._
 import org.scalatest.PrivateMethodTester
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{EmptyTriple, ParserState}
+import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{ParserState, EmptyTriple}
 import utilities.TestHelpers
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {

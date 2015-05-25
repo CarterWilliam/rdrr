@@ -1,0 +1,4 @@
+- Handle Blank Nodes
+- Sorting
+- Output Terse Turtle
+ 

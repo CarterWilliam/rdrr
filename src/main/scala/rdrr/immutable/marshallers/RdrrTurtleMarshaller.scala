@@ -6,7 +6,7 @@ import scala.io.Source
 
 object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
-  val RdfStandard: Map[String, String] = 
+  val RdfStandard: Map[String, String] =
     Map("a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
@@ -165,12 +165,6 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   }
 
 }
-
-sealed trait RdfPrefix {
-  def path: String
-}
-case class Prefix(prefix: String, path: String) extends RdfPrefix
-case class BasePrefix(path: String) extends RdfPrefix
 
 
 object RdrrTurtleMarshaller extends TurtleMarshaller {
