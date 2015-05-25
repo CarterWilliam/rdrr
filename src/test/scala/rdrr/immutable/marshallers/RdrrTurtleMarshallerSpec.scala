@@ -65,6 +65,32 @@ class RdrrTurtleMarshallerSpec extends Specification {
 
       marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
     }
+
+    "serialise to terse Turtle" in new RdrrTurtleMarshallerScope {
+      val graph = Graph (
+
+        Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://purl.org/ontology/mo/MusicArtist") ),
+
+        Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://xmlns.com/foaf/0.1/Person") ),
+
+        Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+          Predicate("http://xmlns.com/foaf/0.1/name"),
+          StandardStringLiteral("Justin Bieber") ) )
+
+      val expected =
+        """
+          |<https://en.wikipedia.org/wiki/Justin_Bieber>
+          |   a <http://purl.org/ontology/mo/MusicArtist>, <http://xmlns.com/foaf/0.1/Person> ;
+          |   <http://xmlns.com/foaf/0.1/name> "Justin Bieber" .
+        """.stripMargin
+
+      marshaller.toTurtle(graph) must beEqualTo (expected).ignoreSpace
+
+    }
   }
 
 }
