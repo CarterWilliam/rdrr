@@ -1,4 +1,4 @@
 - Handle Blank Nodes
 - Sorting
-- Output Terse Turtle
- 
+- Marshall Turtle with given prefixes
+- Save prefixes when unmarshalling turtle? Graph has reference to prefixes last defined in the parser scope?

@@ -64,6 +64,14 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
 
+      "containing labeled blank nodes" in new EntitiesFromLinesScope {
+        val resourceString =
+          """
+            |    _:someone a mo:MusicArtist .""".stripMargin
+        val splitResources = marshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+        splitResources must be equalTo Stream("_:someone", "a", "mo:MusicArtist", ".")
+      }
+
       "containing String literals" in {
 
         "with whitespace" in new EntitiesFromLinesScope {
@@ -185,6 +193,15 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       }
     }
 
+    "create resources" in {
+      "from a standard resource" in new CreateResourcesScope {
+        marshaller invokePrivate resourceFromTurtle("<urn:name:me>", ParserState.Empty) must be equalTo Resource("urn:name:me")
+      }
+      "from a labeled blank node" in new CreateResourcesScope {
+        marshaller invokePrivate resourceFromTurtle("_:someone", ParserState.Empty) must be equalTo BlankNode("someone")
+      }
+    }
+
     "create literals" in {
       "from a turtle string without a language" in new CreateLiteralsScope {
         val literal = marshaller invokePrivate nodeFromTurtle("\"Justin Bieber\"", ParserState.Empty)
@@ -268,6 +285,10 @@ trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
 
 trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val iriFromTurtle = PrivateMethod[String]('iriFromTurtle)
+}
+
+trait CreateResourcesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val resourceFromTurtle = PrivateMethod[RdfResource]('resourceFromTurtle)
 }
 
 trait CreateLiteralsScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {

@@ -1,10 +1,10 @@
 package rdrr.immutable
 
-case class Triple(subject: Resource, predicate: Predicate, `object`: GraphNode)
+case class Triple(subject: RdfResource, predicate: Predicate, `object`: GraphNode)
 
 class Graph(triples: Seq[Triple]) extends Seq[Triple] {
 
-  lazy val subjects: Seq[Resource] = triples.map(_.subject).distinct
+  lazy val subjects: Seq[RdfResource] = triples.map(_.subject).distinct
 
   def contains(subject: Resource, predicate: Predicate, `object`: GraphNode): Boolean =
     triples.contains(Triple(subject, predicate, `object`))

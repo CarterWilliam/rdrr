@@ -2,7 +2,7 @@ package rdrr.immutable.marshallers
 
 import java.io.{StringReader, StringWriter}
 
-import com.hp.hpl.jena.rdf.model.{ModelFactory, Literal => JenaLiteral, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Statement => JenaStatement}
+import com.hp.hpl.jena.rdf.model.{Literal => JenaLiteral, Property => JenaProperty, RDFNode => JenaNode, Resource => JenaResource, Statement => JenaStatement, AnonId, ModelFactory}
 import rdrr.immutable._
 import rdrr.util.JavaHelpers
 
@@ -20,7 +20,7 @@ object JenaTurtleUnmarshaller extends TurtleUnmarshaller with JavaHelpers {
 
   private def tripleStreamFromJenaStatements(statementStream: Stream[JenaStatement]): Stream[Triple] = statementStream match {
     case statement #:: others => {
-      val subject = Resource(statement.getSubject.getURI)
+      val subject = resourceFromJena(statement.getSubject)
       val predicate = Predicate(statement.getPredicate.getURI)
       val `object` = objectFromJena(statement.getObject)
       Triple(subject, predicate, `object`) #:: tripleStreamFromJenaStatements(others)
@@ -28,10 +28,16 @@ object JenaTurtleUnmarshaller extends TurtleUnmarshaller with JavaHelpers {
     case Stream.Empty => Stream.Empty
   }
 
-  private def objectFromJena(node: JenaNode) = node match {
-    case literal if literal.isLiteral => literalFromJena(literal.asLiteral())
-    case resource => Resource(resource.asResource.getURI)
+  private def resourceFromJena(jenaResource: JenaResource) = jenaResource match {
+    case blankNode if jenaResource.isAnon => BlankNode(jenaResource.getId.getLabelString)
+    case resource => Resource(resource.getURI)
   }
+
+  private def objectFromJena(node: JenaNode): GraphNode = node match {
+    case literalNode if literalNode.isLiteral => literalFromJena(literalNode.asLiteral())
+    case resourceNode => resourceFromJena(resourceNode.asResource)
+  }
+
   private def literalFromJena(literal: JenaLiteral) = StandardStringLiteral(literal.asLiteral().getValue.toString)
 
 }
@@ -43,8 +49,9 @@ object JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
 
     val jenaModel = ModelFactory.createDefaultModel()
 
-    implicit def resourceJenaConversion(resource: Resource): JenaResource = {
-      jenaModel.createResource(resource.uri)
+    implicit def resourceJenaConversion(resource: RdfResource): JenaResource = resource match {
+      case resource: Resource => jenaModel.createResource(resource.uri)
+      case blankNode: BlankNode => jenaModel.createResource(new AnonId(blankNode.label))
     }
     implicit def predicateJenaConversion(predicate: Predicate): JenaProperty = {
       jenaModel.createProperty(predicate.uri)
