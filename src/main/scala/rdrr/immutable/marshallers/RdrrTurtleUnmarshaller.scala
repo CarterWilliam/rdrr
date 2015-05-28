@@ -18,7 +18,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     val CommentLine = """^\s*#.*$""".r
     val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
     val UnlabeledBlankNodeEtc = """^\s*\[\s*\]\s*(.*)$""".r
-    val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes
+    val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes, unlabeled blank node open/close with content ...
     val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
     val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
     val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
@@ -61,7 +61,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   case class ParserState(basePrefix: Option[BasePrefix] = None,
                          prefixes: Seq[Prefix] = Nil,
                          blankNodes: Seq[BlankNode] = Nil,
-                         partialTriple: PartialTriple = EmptyTriple) {
+                         private val scopedPartialTriples: Seq[PartialTriple] = Seq(EmptyTriple)) {
+
+    lazy val partialTriple = scopedPartialTriples.headOption.getOrElse{
+      throw new TurtleParseException("Error getting parser scope. Additional blank node close brace in turtle ']' ?")
+    }
 
     def + (prefix: RdfPrefix): ParserState = prefix match {
       case basePrefix: BasePrefix =>
@@ -71,28 +75,44 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
         copy(prefixes = updatePrefixes)
     }
 
-    val BlankNodeAlphabet: Seq[String] = ('a' to 'z').map(_.toString)
+    def + (node: BlankNode): ParserState = copy(blankNodes = node +: blankNodes)
 
-    def generateBlankNode: BlankNode = {
+    def withPartial(partialTriple: PartialTriple) =
+      copy(scopedPartialTriples = partialTriple +: scopedPartialTriples.tail)
 
+    def nextBlankNode: BlankNode = {
       def iteration(n: Int): BlankNode = {
         if (blankNodes contains BlankNode("blank-" + n))
           iteration(n+1)
         else
           BlankNode("blank-" + n)
       }
-
       iteration(1)
     }
+
+    def pushBlankNodeScope() = {
+      val newBlankNode = nextBlankNode
+      scopedPartialTriples.head match {
+        case EmptyTriple =>
+          copy(blankNodes = newBlankNode +: blankNodes, scopedPartialTriples = Subject(newBlankNode) +: Subject(newBlankNode) +: scopedPartialTriples.tail)
+        case _ =>
+          copy(blankNodes = newBlankNode +: blankNodes, scopedPartialTriples = Subject(newBlankNode) +: scopedPartialTriples)
+      }
+
+    }
+
+    def popBlankNodeScope() = copy(scopedPartialTriples = scopedPartialTriples.tail)
 
   }
 
   object ParserState {
-    val Empty = ParserState(None, Nil, Nil, EmptyTriple)
+    val Empty = ParserState(None, Nil, Nil, Seq(EmptyTriple))
   }
 
   sealed abstract class PartialTriple
-  object EmptyTriple extends PartialTriple
+  object EmptyTriple extends PartialTriple {
+    override def toString = "EmptyTriple"
+  }
   case class Subject(subject: RdfResource) extends PartialTriple
   case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
 
@@ -101,6 +121,9 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
     val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
+    val AnonymousBlankNode = "[]"
+    val AnonymousBlankNodeStart = "["
+    val AnonymousBlankNodeEnd = "]"
     val AnotherPredicateNext = ";"
     val AnotherObjectNext = ","
     val AnotherSubjectNext = "."
@@ -116,21 +139,41 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case entity #:: rest => parserState.partialTriple match {
 
         case EmptyTriple =>
-          val subjectPartial = Subject(resourceFromTurtle(entity, parserState))
-          triplesFromEntities(rest, parserState.copy(partialTriple = subjectPartial))
+          entity match {
+
+            case AnonymousBlankNode =>
+              val blankNode = parserState.nextBlankNode
+              triplesFromEntities(rest, parserState + blankNode withPartial Subject(blankNode))
+
+            case AnonymousBlankNodeStart =>
+              val blankNode = parserState.nextBlankNode
+              triplesFromEntities(rest, parserState.pushBlankNodeScope())
+
+            case resourceTurtle =>
+              triplesFromEntities(rest, parserState.withPartial(Subject(resourceFromTurtle(entity, parserState))))
+
+          }
 
         case Subject(subject) =>
           val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
-          triplesFromEntities(rest, parserState.copy(partialTriple = subjectPredicatePartial))
+          triplesFromEntities(rest, parserState.withPartial(subjectPredicatePartial))
 
         case SubjectAndPredicate(subject, predicate) => {
           entity match {
+
+            case AnonymousBlankNodeStart =>
+              val newState = parserState.pushBlankNodeScope()
+              Triple(subject, predicate, newState.blankNodes.head) #:: triplesFromEntities(rest, newState)
+            case AnonymousBlankNodeEnd =>
+              triplesFromEntities(rest, parserState.popBlankNodeScope())
+
             case AnotherObjectNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = SubjectAndPredicate(subject, predicate)))
+              triplesFromEntities(rest, parserState.withPartial(SubjectAndPredicate(subject, predicate)))
             case AnotherPredicateNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = Subject(subject)))
+              triplesFromEntities(rest, parserState.withPartial(Subject(subject)))
             case AnotherSubjectNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = EmptyTriple))
+              triplesFromEntities(rest, parserState.withPartial(EmptyTriple))
+
             case resourceTurtle =>
               Triple(subject, predicate, nodeFromTurtle(resourceTurtle, parserState)) #:: triplesFromEntities(rest, parserState)
           }
@@ -144,6 +187,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   private[this] def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
     val UriResource = "^<([^:/?#]+:.*)>$".r // URI with scheme - RFC 3986
+    val EmailAddress = """^<(\S+@\S+\.\S+)>$""".r // email
     val RelativeUriResource = "<(.*)>".r
     val PrefixedResource = "(.*):(.*)".r
 
@@ -154,6 +198,8 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case rdfStandard if RdfStandard.contains(rdfStandard) => RdfStandard(rdfStandard)
 
       case UriResource(uri) => uri
+
+      case EmailAddress(email) => email
 
       case RelativeUriResource(resource) if parserState.basePrefix.isDefined =>
         parserState.basePrefix.map(withPrefix(resource)).get
@@ -172,7 +218,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
-      case UnlabeledBlankNode => parserState.generateBlankNode
+      case UnlabeledBlankNode => parserState.nextBlankNode
       case resourceString => Resource(iriFromTurtle(resourceString, parserState))
     }
   }

@@ -4,7 +4,7 @@ import rdrr.immutable._
 import org.scalatest.PrivateMethodTester
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{ParserState, EmptyTriple}
+import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{SubjectAndPredicate, Subject, ParserState, EmptyTriple}
 import utilities.TestHelpers
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {
@@ -60,6 +60,12 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
         val resourceString = " [] a [   ]."
         val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
         splitResources must be equalTo Stream("[]", "a", "[]", ".")
+      }
+
+      "containing unlabeled blank nodes with content" in new EntitiesFromLinesScope {
+        val resourceString = """ <urn:blank> a [ :label "blank"  ]."""
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("<urn:blank>", "a", "[", ":label", "\"blank\"", "]", ".")
       }
 
       "containing String literals" in {
@@ -275,10 +281,36 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
     }
 
     "generate blank nodes with unique labels" in {
-      val initialState = ParserState.Empty
-      val newBlankNode = initialState.generateBlankNode
+      val newBlankNode = ParserState.Empty.nextBlankNode
       newBlankNode.label must be equalTo "blank-1"
     }
+
+    "overwrite the current partial triple when withPartial is called" in {
+      val subjectPartial = Subject(Resource("uri"))
+      val expectedState = ParserState(scopedPartialTriples = Seq(subjectPartial))
+      ParserState.Empty.withPartial(subjectPartial) must be equalTo expectedState
+    }
+
+    "overwrite the current partial triple when withPartial is called on a state with more than one partial in scope" in {
+      val subjectPartial = Subject(Resource("uri"))
+      val initialState = ParserState(scopedPartialTriples = Seq(EmptyTriple, EmptyTriple))
+      val expectedState = ParserState(scopedPartialTriples = Seq(subjectPartial, EmptyTriple))
+      initialState.withPartial(subjectPartial) must be equalTo expectedState
+    }
+
+    "allow adding blank nodes while simultaneously pushing the node into a new partial triple scope" in {
+      val initialPartial = SubjectAndPredicate(Resource("uri"), Predicate("uri"))
+      val initialState = ParserState.Empty.withPartial(initialPartial)
+      val expectedState = ParserState(blankNodes = Seq(BlankNode("blank-1")),
+        scopedPartialTriples = Seq(Subject(BlankNode("blank-1")), initialPartial))
+      initialState.pushBlankNodeScope() must be equalTo expectedState
+    }
+
+    "allow discarding the current partial triple scope" in {
+      val initialState = ParserState(scopedPartialTriples = Seq(EmptyTriple, EmptyTriple))
+      initialState.popBlankNodeScope() must be equalTo ParserState.Empty
+    }
+
   }
 
 
@@ -296,7 +328,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       graph must have size 3
     }
 
-    "a graph with blank nodes" in new Scope with TestHelpers {
+    "a graph with blank nodes" in new RdrrTurtleUnmarshallerScope {
       // The Jena marshaller does not seem to extract the labels given in the turtle
       val blankNodeTurtle = getResource("labeled-blank-nodes.ttl")
       val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
@@ -304,6 +336,41 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       graph(0).`object` must be equalTo BlankNode("bob")
       graph(1).subject must be equalTo BlankNode("bob")
       graph(1).`object` must be equalTo BlankNode("alice")
+    }
+
+    "a graph with blank nodes containing nested triples as an object" in new RdrrTurtleUnmarshallerScope {
+      val turtle = getResource("unlabeled-blank-nodes-with-nested-triples.ttl")
+      val graph = unmarshaller.fromTurtle(turtle)
+
+      graph must be equalTo Graph (
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+        Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")) )
+    }
+
+    "a graph with blank nodes containing nested triples as a subject" in new RdrrTurtleUnmarshallerScope {
+      val turtle =
+        """
+          |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+          |[ foaf:name "Bob" ] foaf:knows [] .
+        """.stripMargin
+      val graph = unmarshaller.fromTurtle(turtle)
+
+      graph must be equalTo Graph (
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")) )
+    }
+
+    "a graph with blank nodes containing many nested triples" in new RdrrTurtleUnmarshallerScope {
+      val turtle = getResource("complex-anonymous-nested-blank-nodes.ttl")
+      val graph = unmarshaller.fromTurtle(turtle)
+
+      graph must be equalTo Graph (
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Alice")),
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+        Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
+        Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-3")),
+        Triple(BlankNode("blank-3"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Eve")),
+        Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/mbox"), Resource("bob@example.com")) )
     }
 
   }
@@ -328,8 +395,4 @@ trait CreateLiteralsScope extends RdrrTurtleUnmarshallerScope with PrivateMethod
 
 trait EntitiesFromLinesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
-}
-
-trait ParserStateScope extends Scope {
-
 }
