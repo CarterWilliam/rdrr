@@ -51,11 +51,15 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       }
 
       "containing labeled blank nodes" in new EntitiesFromLinesScope {
-        val resourceString =
-          """
-            |    _:someone a mo:MusicArtist .""".stripMargin
-        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
-        splitResources must be equalTo Stream("_:someone", "a", "mo:MusicArtist", ".")
+        val resourceString = " _:someone a _:something."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("_:someone", "a", "_:something", ".")
+      }
+
+      "containing unlabeled blank nodes" in new EntitiesFromLinesScope {
+        val resourceString = " [] a [   ]."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("[]", "a", "[]", ".")
       }
 
       "containing String literals" in {
@@ -186,6 +190,13 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       "from a labeled blank node" in new CreateResourcesScope {
         unmarshaller invokePrivate resourceFromTurtle("_:someone", ParserState.Empty) must be equalTo BlankNode("someone")
       }
+      "from an unlabelled blank node" in new CreateResourcesScope {
+        unmarshaller invokePrivate resourceFromTurtle("[]", ParserState.Empty) must be equalTo BlankNode("blank-1")
+      }
+      "from a second unlabelled blank node" in new CreateResourcesScope {
+        val parserState = ParserState(blankNodes = Seq(BlankNode("blank-1")))
+        unmarshaller invokePrivate resourceFromTurtle("[]", parserState) must be equalTo BlankNode("blank-2")
+      }
     }
 
     "create literals" in {
@@ -234,7 +245,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
     "return the correct state when a standard prefix is added" in  {
       val musicOntologyPrefix = Prefix("mo", "http://purl.org/ontology/mo/")
-      val expectedState = ParserState(Seq(musicOntologyPrefix), None, EmptyTriple)
+      val expectedState = ParserState(prefixes = Seq(musicOntologyPrefix))
       ParserState.Empty + musicOntologyPrefix must be equalTo expectedState
     }
 
@@ -243,24 +254,30 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       val wikipediaPrefix = Prefix("wiki", "http://en.wikipedia.org/wiki/")
       val kanzakiMusicOntologyPrefix = Prefix("mo", "http://www.kanzaki.com/ns/music#")
 
-      val initialState = ParserState(Seq(musicOntologyPrefix, wikipediaPrefix), None, EmptyTriple)
-      val expectedState = ParserState(Seq(wikipediaPrefix, kanzakiMusicOntologyPrefix), None, EmptyTriple)
+      val initialState = ParserState(prefixes = Seq(musicOntologyPrefix, wikipediaPrefix))
+      val expectedState = ParserState(prefixes = Seq(wikipediaPrefix, kanzakiMusicOntologyPrefix))
 
       initialState + kanzakiMusicOntologyPrefix must be equalTo expectedState
     }
 
     "return the correct state when a base prefix is added" in {
       val musicOntologyBasePrefix = BasePrefix("http://purl.org/ontology/mo/")
-      val expectedState = ParserState(Nil, Some(musicOntologyBasePrefix), EmptyTriple)
+      val expectedState = ParserState(basePrefix = Some(musicOntologyBasePrefix))
       ParserState.Empty + musicOntologyBasePrefix must be equalTo expectedState
     }
 
     "overwrite older base prefixes" in {
       val basePrefix1 = BasePrefix("http://base.prefix/1/")
       val basePrefix2 = BasePrefix("http://base.prefix/2/")
-      val initialState = ParserState(Nil, Some(basePrefix1), EmptyTriple)
-      val expectedState = ParserState(Nil, Some(basePrefix2), EmptyTriple)
+      val initialState = ParserState(basePrefix = Some(basePrefix1))
+      val expectedState = ParserState(basePrefix = Some(basePrefix2))
       initialState + basePrefix2 must be equalTo expectedState
+    }
+
+    "generate blank nodes with unique labels" in {
+      val initialState = ParserState.Empty
+      val newBlankNode = initialState.generateBlankNode
+      newBlankNode.label must be equalTo "blank-1"
     }
   }
 

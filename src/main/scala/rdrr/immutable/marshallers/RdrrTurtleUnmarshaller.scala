@@ -17,6 +17,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     val EmptyLine = """^\s*$""".r
     val CommentLine = """^\s*#.*$""".r
     val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
+    val UnlabeledBlankNodeEtc = """^\s*\[\s*\]\s*(.*)$""".r
     val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes
     val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
     val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
@@ -31,6 +32,9 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case PrefixLine(prefixLine) #:: moreLines =>
         prefixLine #:: entitiesFromLines(moreLines)
+
+      case UnlabeledBlankNodeEtc(etc) #:: moreLines =>
+        "[]" #:: entitiesFromLines(etc #:: moreLines)
 
       case EntityEtc(resource, etc) #:: moreLines =>
         resource #:: entitiesFromLines(etc #:: moreLines)
@@ -54,7 +58,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
   }
 
-  case class ParserState(prefixes: Seq[Prefix], basePrefix: Option[BasePrefix], partialTriple: PartialTriple) {
+  case class ParserState(basePrefix: Option[BasePrefix] = None,
+                         prefixes: Seq[Prefix] = Nil,
+                         blankNodes: Seq[BlankNode] = Nil,
+                         partialTriple: PartialTriple = EmptyTriple) {
+
     def + (prefix: RdfPrefix): ParserState = prefix match {
       case basePrefix: BasePrefix =>
         copy(basePrefix = Some(basePrefix))
@@ -62,10 +70,25 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
         val updatePrefixes = prefixes.filter(_.prefix != standardPrefix.prefix) :+ standardPrefix
         copy(prefixes = updatePrefixes)
     }
+
+    val BlankNodeAlphabet: Seq[String] = ('a' to 'z').map(_.toString)
+
+    def generateBlankNode: BlankNode = {
+
+      def iteration(n: Int): BlankNode = {
+        if (blankNodes contains BlankNode("blank-" + n))
+          iteration(n+1)
+        else
+          BlankNode("blank-" + n)
+      }
+
+      iteration(1)
+    }
+
   }
 
   object ParserState {
-    val Empty = ParserState(Nil, None, EmptyTriple)
+    val Empty = ParserState(None, Nil, Nil, EmptyTriple)
   }
 
   sealed abstract class PartialTriple
@@ -145,9 +168,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   private[this] def resourceFromTurtle(turtleRepresentation: String, parserState: ParserState): RdfResource = {
     val LabeledBlankNode = """^_:([^\s]*)$""".r
+    val UnlabeledBlankNode = "[]"
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
+      case UnlabeledBlankNode => parserState.generateBlankNode
       case resourceString => Resource(iriFromTurtle(resourceString, parserState))
     }
   }
