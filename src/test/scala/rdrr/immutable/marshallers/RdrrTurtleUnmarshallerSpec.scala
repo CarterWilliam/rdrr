@@ -502,27 +502,27 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       }
     }
 
-//    "a turtle graph with nested blank nodes in collections" in new RdrrTurtleUnmarshallerScope {
-//      val someoneKnowsZero =
-//        """
-//          |@prefix : <http://example.org/stuff/1.0/> .
-//          |  :a :b ( "apple" [ :b :c ] ) ) .
-//        """.stripMargin
-//
-//      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
-//      graph must containTheSameElementsAs {
-//        Graph(
-//          Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
-//          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
-//          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
-//
-//          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
-//          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
-//
-//          Triple(BlankNode("blank-3"), Predicate("http://example.org/stuff/1.0/b"), Resource("http://example.org/stuff/1.0/c"))
-//        )
-//      }
-//    }
+    "a turtle graph with nested blank nodes in collections" in new RdrrTurtleUnmarshallerScope {
+      val someoneKnowsZero =
+        """
+          |@prefix : <http://example.org/stuff/1.0/> .
+          |  :a :b ( "apple" [ :b :c ] ) .
+        """.stripMargin
+
+      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
+      graph must containTheSameElementsAs {
+        Graph(
+          Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+
+          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
+          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+
+          Triple(BlankNode("blank-3"), Predicate("http://example.org/stuff/1.0/b"), Resource("http://example.org/stuff/1.0/c"))
+        )
+      }
+    }
 
   }
 

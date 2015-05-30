@@ -127,6 +127,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       Stream("[", "rdf:first", CollectionStart) #::: collectionScope #::: Stream(CollectionEnd, ";", "rdf:rest") #:::
         convertCollectionToBlankNodes(rest) #::: Stream("]")
 
+    case BlankNodeWithNestedTriplesStart #:: tail =>
+      val (collectionScope, rest) = partitionBlankNodeScope(tail)
+      Stream("[", "rdf:first", BlankNodeWithNestedTriplesStart) #::: collectionScope #::: Stream(BlankNodeWithNestedTriplesEnd, ";", "rdf:rest") #:::
+        convertCollectionToBlankNodes(rest) #::: Stream("]")
+
     case head #:: tail =>
       Stream("[", "rdf:first", head, ";", "rdf:rest") #::: convertCollectionToBlankNodes(tail) #::: Stream("]")
 
