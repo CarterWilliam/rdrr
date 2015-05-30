@@ -106,6 +106,10 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
   val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
 
+  val AnotherPredicateNext = ";"
+  val AnotherObjectNext = ","
+  val AnotherSubjectNext = "."
+
   val BlankNodeWithNestedTriplesStart = "["
   val BlankNodeWithNestedTriplesEnd = "]"
 
@@ -115,20 +119,14 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   private[this] def partitionBlankNodeScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
     entities.indexOf(BlankNodeWithNestedTriplesEnd, from) match {
       case -1 => throw new TurtleParseException("Entered blank node scope that did not terminate")
-      case potentialScopeEndIndex => {
-        val (blankNodeScope, closurePlusMainScope) = entities.splitAt(potentialScopeEndIndex)
-
-        if (blankNodeScopeIsClosed(blankNodeScope))
-          (blankNodeScope, closurePlusMainScope.tail)
-        else
-          partitionBlankNodeScope(entities, potentialScopeEndIndex + 1)
-      }
+      case potentialScopeEndIndex =>
+        entities.splitAt(potentialScopeEndIndex) match {
+          case (blankNodeScope, closurePlusMainScope) if blankNodeScopeIsClosed (blankNodeScope) =>
+            (blankNodeScope, closurePlusMainScope.tail)
+          case _ =>
+            partitionBlankNodeScope (entities, potentialScopeEndIndex + 1)
+        }
     }
-
-
-  val AnotherPredicateNext = ";"
-  val AnotherObjectNext = ","
-  val AnotherSubjectNext = "."
 
   private[this] def triplesFromEntities(entities: Stream[String],
                                         parserState: ParserState = ParserState.Empty): Stream[Triple] = {
