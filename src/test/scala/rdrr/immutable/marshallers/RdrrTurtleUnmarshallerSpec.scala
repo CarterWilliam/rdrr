@@ -57,7 +57,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       }
 
       "containing unlabeled blank nodes" in new EntitiesFromLinesScope {
-        val resourceString = " [] a [   ]."
+        val resourceString = " [] a []."
         val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
         splitResources must be equalTo Stream("[]", "a", "[]", ".")
       }
@@ -420,8 +420,20 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
             Triple(BlankNode("blank-3"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Eve"))
           )
         }
-
       }
+    }
+
+    "a turtle graph with the empty collection" in new RdrrTurtleUnmarshallerScope {
+      val someoneKnowsZero =
+        """
+          |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+          |  [] foaf:knows () .
+        """.stripMargin
+
+      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
+      graph must be equalTo Graph(
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+      )
     }
 
   }

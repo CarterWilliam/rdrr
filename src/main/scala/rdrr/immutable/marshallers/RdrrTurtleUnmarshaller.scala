@@ -6,17 +6,20 @@ import scala.io.Source
 object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val RdfStandard: Map[String, String] =
-    Map("a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    Map("a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+      "()" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
-  def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
+  private[this] def fromTurtle(lines: Stream[String]) = {
+    val entities = entitiesFromLines(lines)
+    Graph(triplesFromEntities(entities))
+  }
 
   val EmptyLine = """^\s*$""".r
   val CommentLine = """^\s*#.*$""".r
   val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
-  val UnlabeledBlankNodeEtc = """^\s*\[\s*\]\s*(.*)$""".r
-  val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes
+  val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Blank Nodes
   val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
   val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
   val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
@@ -32,9 +35,6 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case PrefixLine(prefixLine) #:: moreLines =>
         prefixLine #:: entitiesFromLines(moreLines)
-
-      case UnlabeledBlankNodeEtc(etc) #:: moreLines =>
-        "[]" #:: entitiesFromLines(etc #:: moreLines)
 
       case EntityEtc(resource, etc) #:: moreLines =>
         resource #:: entitiesFromLines(etc #:: moreLines)
