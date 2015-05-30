@@ -5,13 +5,12 @@ import scala.io.Source
 
 object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
-  val RdfStandard: Map[String, String] =
-    Map("a" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-      "()" -> "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")
+  val RdfStandardPrefixes = Seq(RdfOntology.prefix)
+  val RdfStandard: Map[String, String] = Map("a" -> RdfOntology.`type`.uri, "()" -> RdfOntology.nil.uri)
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
 
-  private[this] def fromTurtle(lines: Stream[String]) = {
+  private def fromTurtle(lines: Stream[String]) = {
     val entities = entitiesFromLines(lines)
     Graph(triplesFromEntities(entities))
   }
@@ -25,7 +24,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
   val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
 
-  private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
+  private def entitiesFromLines(lines: Stream[String]): Stream[String] = {
 
     lines match {
 
@@ -94,7 +93,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   }
 
   object ParserState {
-    val Empty = ParserState(None, Nil, Nil, EmptyTriple)
+    val Empty = ParserState(None, RdfStandardPrefixes, Nil, EmptyTriple)
   }
 
   sealed abstract class PartialTriple
@@ -112,23 +111,40 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val BlankNodeWithNestedTriplesStart = "["
   val BlankNodeWithNestedTriplesEnd = "]"
+  
+  private def partitionBlankNodeScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
+    partitionByScope(BlankNodeWithNestedTriplesStart, BlankNodeWithNestedTriplesEnd)(entities, from)
 
-  private def blankNodeScopeIsClosed(scope: Seq[String]) =
-    scope.count(_ == BlankNodeWithNestedTriplesStart) == scope.count(_ == BlankNodeWithNestedTriplesEnd)
+  val CollectionStart = "("
+  val CollectionEnd = ")"
+  
+  private def partitionCollectionScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
+    partitionByScope(CollectionStart, CollectionEnd)(entities, from)
 
-  private[this] def partitionBlankNodeScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
-    entities.indexOf(BlankNodeWithNestedTriplesEnd, from) match {
+  private def convertCollectionToBlankNodes(collectionEntities: Stream[String]): Stream[String] = collectionEntities match {
+    case head #:: Stream.Empty =>
+      Stream("[", "rdf:first", head, ";", "rdf:rest", "rdf:nil", "]")
+    case head #:: tail =>
+      Stream("[", "rdf:first", head, ";", "rdf:rest") #::: convertCollectionToBlankNodes(tail) #::: Stream("]")
+  }
+
+  private def scopeIsClosed(open: String, close: String)(scope: Seq[String]) =
+    scope.count(_ == open) == scope.count(_ == close)
+
+  private def partitionByScope(open: String, close: String)(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
+  
+    entities.indexOf(close, from) match {
       case -1 => throw new TurtleParseException("Entered blank node scope that did not terminate")
       case potentialScopeEndIndex =>
         entities.splitAt(potentialScopeEndIndex) match {
-          case (blankNodeScope, closurePlusMainScope) if blankNodeScopeIsClosed (blankNodeScope) =>
+          case (blankNodeScope, closurePlusMainScope) if scopeIsClosed(open, close)(blankNodeScope) =>
             (blankNodeScope, closurePlusMainScope.tail)
           case _ =>
-            partitionBlankNodeScope (entities, potentialScopeEndIndex + 1)
+            partitionByScope(open,close)(entities, potentialScopeEndIndex + 1)
         }
     }
 
-  private[this] def triplesFromEntities(entities: Stream[String],
+  private def triplesFromEntities(entities: Stream[String],
                                         parserState: ParserState = ParserState.Empty): Stream[Triple] = {
 
     entities match {
@@ -138,6 +154,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case PrefixExtractor(prefix, uri) #:: rest =>
         triplesFromEntities(rest, parserState withPrefix Prefix(prefix, uri))
+
+      case CollectionStart #:: rest =>
+        val (collectionScope, mainScope) = partitionCollectionScope(rest)
+        triplesFromEntities(convertCollectionToBlankNodes(collectionScope), parserState) #:::
+          triplesFromEntities(mainScope, parserState)
 
       case BlankNodeWithNestedTriplesStart #:: rest => {
         val newBlankNode = parserState.nextBlankNode
@@ -194,7 +215,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val RelativeUriResource = "<(.*)>".r
   val PrefixedResource = "(.*):(.*)".r
 
-  private[this] def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
+  private def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
 
     def withPrefix(resource: String)(prefix: RdfPrefix) = prefix.path + resource
 
@@ -219,7 +240,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val LabeledBlankNode = """^_:([^\s]*)$""".r
   val UnlabeledBlankNode = "[]"
 
-  private[this] def resourceFromTurtle(turtleRepresentation: String, parserState: ParserState): RdfResource = {
+  private def resourceFromTurtle(turtleRepresentation: String, parserState: ParserState): RdfResource = {
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
@@ -236,7 +257,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val IntegerLiteralMatcher = """^\+?(-?[0-9]+)$""".r
   val DecimalLiteralMatcher = """^\+?(-?[0-9]*\.[0-9]+)$""".r
 
-  private[this] def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): GraphNode = {
+  private def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): GraphNode = {
 
     turtleRepresentation match {
       case StringLiteralWithLanguageMatcher(string, language) => LanguageStringLiteral(string, language)

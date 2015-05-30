@@ -174,6 +174,15 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
         val scopes = unmarshaller invokePrivate partitionBlankNodeScope(entities, 0)
         scopes must be equalTo (Stream("a", "[", "foaf:name", "[]", "]", ";", "foaf:knows", "[]"), Stream("."))
       }
+
+    }
+
+    "convert collections into blank node scopes" in new ConvertCollectionScope {
+      val entities = Stream("1", "<resource>")
+      val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "<resource>", ";", "rdf:rest",
+        "rdf:nil", "]", "]")
+      val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
+      actual must be equalTo expected
     }
 
 
@@ -287,6 +296,10 @@ trait PartitionBlankNodeScopeScope extends RdrrTurtleUnmarshallerScope with Priv
   val partitionBlankNodeScope = PrivateMethod[(Stream[String], Stream[String])]('partitionBlankNodeScope)
 }
 
+trait ConvertCollectionScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val convertCollectionToBlankNodes = PrivateMethod[Stream[String]]('convertCollectionToBlankNodes)
+}
+
 
 class RdrrParserStateSpec extends Specification {
 
@@ -294,8 +307,9 @@ class RdrrParserStateSpec extends Specification {
 
     "return the correct state when a standard prefix is added" in  {
       val musicOntologyPrefix = Prefix("mo", "http://purl.org/ontology/mo/")
+      val initialState = ParserState(prefixes = Nil)
       val expectedState = ParserState(prefixes = Seq(musicOntologyPrefix))
-      ParserState.Empty withPrefix musicOntologyPrefix must be equalTo expectedState
+      initialState withPrefix musicOntologyPrefix must be equalTo expectedState
     }
 
     "overwrite older prefix mappings if they have the same prefix" in {
@@ -311,8 +325,9 @@ class RdrrParserStateSpec extends Specification {
 
     "return the correct state when a base prefix is added" in {
       val musicOntologyBasePrefix = BasePrefix("http://purl.org/ontology/mo/")
+      val initialState = ParserState(prefixes = Nil)
       val expectedState = ParserState(basePrefix = Some(musicOntologyBasePrefix))
-      ParserState.Empty withPrefix musicOntologyBasePrefix must be equalTo expectedState
+      initialState withPrefix musicOntologyBasePrefix must be equalTo expectedState
     }
 
     "overwrite older base prefixes" in {
@@ -324,21 +339,23 @@ class RdrrParserStateSpec extends Specification {
     }
 
     "overwrite partial triples" in {
-      val initialState = ParserState(partialTriple = Subject(BlankNode("blank-1")))
+      val initialState = ParserState.Empty.copy(partialTriple = Subject(BlankNode("blank-1")))
       initialState withPartial EmptyTriple must be equalTo ParserState.Empty
     }
 
     "generate blank nodes with unique labels" in {
-      val initialState = ParserState.Empty
+      val initialState = ParserState(prefixes = Nil)
       val newBlankNode = initialState.nextBlankNode
       newBlankNode.label must be equalTo "blank-1"
     }
 
     "add nodes to blank nodes when appropriate" in {
+      val initialState = ParserState(prefixes = Nil)
+
       val resourceNode = Resource("bieber")
-      ParserState.Empty withNode resourceNode  must be equalTo ParserState.Empty
+      initialState withNode resourceNode  must be equalTo initialState
       val blankNode = BlankNode("label")
-      ParserState.Empty withNode blankNode must be equalTo ParserState(blankNodes = Seq(blankNode))
+      initialState withNode blankNode must be equalTo ParserState(blankNodes = Seq(blankNode))
     }
   }
 
@@ -433,6 +450,23 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
       graph must be equalTo Graph(
         Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+      )
+    }
+
+    "a turtle graph with a collection of cardinality > 0" in new RdrrTurtleUnmarshallerScope {
+      val someoneKnowsZero =
+        """
+          |@prefix : <http://example.org/stuff/1.0/> .
+          |:a :b ( "apple" "banana" ) .
+        """.stripMargin
+
+      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
+      graph must be equalTo Graph(
+        Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+        Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+        Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+        Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
+        Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
       )
     }
 
