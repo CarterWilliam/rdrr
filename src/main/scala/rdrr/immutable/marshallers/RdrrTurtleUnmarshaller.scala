@@ -122,10 +122,15 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     partitionByScope(CollectionStart, CollectionEnd)(entities, from)
 
   private def convertCollectionToBlankNodes(collectionEntities: Stream[String]): Stream[String] = collectionEntities match {
-    case head #:: Stream.Empty =>
-      Stream("[", "rdf:first", head, ";", "rdf:rest", "rdf:nil", "]")
+    case CollectionStart #:: tail =>
+      val (collectionScope, rest) = partitionCollectionScope(tail)
+      Stream("[", "rdf:first", CollectionStart) #::: collectionScope #::: Stream(CollectionEnd, ";", "rdf:rest") #:::
+        convertCollectionToBlankNodes(rest) #::: Stream("]")
+
     case head #:: tail =>
       Stream("[", "rdf:first", head, ";", "rdf:rest") #::: convertCollectionToBlankNodes(tail) #::: Stream("]")
+
+    case Stream.Empty => Stream("rdf:nil")
   }
 
   private def scopeIsClosed(open: String, close: String)(scope: Seq[String]) =
@@ -137,8 +142,8 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case -1 => throw new TurtleParseException("Entered blank node scope that did not terminate")
       case potentialScopeEndIndex =>
         entities.splitAt(potentialScopeEndIndex) match {
-          case (blankNodeScope, closurePlusMainScope) if scopeIsClosed(open, close)(blankNodeScope) =>
-            (blankNodeScope, closurePlusMainScope.tail)
+          case (blankNodeScope, closePlusMainScope) if scopeIsClosed(open, close)(blankNodeScope) =>
+            (blankNodeScope, closePlusMainScope.tail)
           case _ =>
             partitionByScope(open,close)(entities, potentialScopeEndIndex + 1)
         }
@@ -157,8 +162,8 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case CollectionStart #:: rest =>
         val (collectionScope, mainScope) = partitionCollectionScope(rest)
-        triplesFromEntities(convertCollectionToBlankNodes(collectionScope), parserState) #:::
-          triplesFromEntities(mainScope, parserState)
+        val rewrittenEntities = convertCollectionToBlankNodes(collectionScope) #::: mainScope
+        triplesFromEntities(rewrittenEntities, parserState)
 
       case BlankNodeWithNestedTriplesStart #:: rest => {
         val newBlankNode = parserState.nextBlankNode

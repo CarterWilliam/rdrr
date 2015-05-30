@@ -185,6 +185,14 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       actual must be equalTo expected
     }
 
+    "convert nested collections into blank node scopes" in new ConvertCollectionScope {
+      val entities = Stream("1", "(",  "2", ")", "3")
+      val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "(",  "2", ")", ";", "rdf:rest",
+        "[", "rdf:first", "3", ";", "rdf:rest", "rdf:nil", "]", "]", "]")
+      val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
+      expected.size; actual.size
+      actual must be equalTo expected
+    }
 
     "extract uris" in {
       "from a turtle resource in IRI format" in new IriExtractScope {
@@ -448,7 +456,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         """.stripMargin
 
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
-      graph must be equalTo Graph(
+      graph must be equalTo Graph (
         Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
       )
     }
@@ -457,11 +465,11 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       val someoneKnowsZero =
         """
           |@prefix : <http://example.org/stuff/1.0/> .
-          |:a :b ( "apple" "banana" ) .
+          |  :a :b ( "apple" "banana" ) .
         """.stripMargin
 
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
-      graph must be equalTo Graph(
+      graph must be equalTo Graph (
         Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
         Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
         Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
@@ -469,6 +477,52 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
       )
     }
+
+    "a turtle graph with nested collections" in new RdrrTurtleUnmarshallerScope {
+      val someoneKnowsZero =
+        """
+          |@prefix : <http://example.org/stuff/1.0/> .
+          |  :a :b ( "apple" ( "banana" "clementine" ) ) .
+          """.stripMargin
+
+      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
+      graph must containTheSameElementsAs {
+        Graph(
+          Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
+          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+
+          Triple(BlankNode("blank-3"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
+          Triple(BlankNode("blank-3"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-4")),
+          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("clementine")),
+          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+        )
+      }
+    }
+
+//    "a turtle graph with nested blank nodes in collections" in new RdrrTurtleUnmarshallerScope {
+//      val someoneKnowsZero =
+//        """
+//          |@prefix : <http://example.org/stuff/1.0/> .
+//          |  :a :b ( "apple" [ :b :c ] ) ) .
+//        """.stripMargin
+//
+//      val graph = unmarshaller.fromTurtle(someoneKnowsZero)
+//      graph must containTheSameElementsAs {
+//        Graph(
+//          Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+//          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+//          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+//
+//          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
+//          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+//
+//          Triple(BlankNode("blank-3"), Predicate("http://example.org/stuff/1.0/b"), Resource("http://example.org/stuff/1.0/c"))
+//        )
+//      }
+//    }
 
   }
 
