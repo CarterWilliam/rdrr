@@ -6,4 +6,4 @@
     foaf:name "Bob" ;
     foaf:knows [
         foaf:name "Eve" ] ;
-    foaf:mbox <bob@example.com> ] .
+    foaf:mbox <bob:example.com> ] .

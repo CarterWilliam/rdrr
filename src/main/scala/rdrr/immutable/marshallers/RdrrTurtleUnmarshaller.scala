@@ -109,6 +109,23 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val BlankNodeWithNestedTriplesStart = "["
   val BlankNodeWithNestedTriplesEnd = "]"
 
+  private def blankNodeScopeIsClosed(scope: Seq[String]) =
+    scope.count(_ == BlankNodeWithNestedTriplesStart) == scope.count(_ == BlankNodeWithNestedTriplesEnd)
+
+  private[this] def partitionBlankNodeScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
+    entities.indexOf(BlankNodeWithNestedTriplesEnd, from) match {
+      case -1 => throw new TurtleParseException("Entered blank node scope that did not terminate")
+      case potentialScopeEndIndex => {
+        val (blankNodeScope, closurePlusMainScope) = entities.splitAt(potentialScopeEndIndex)
+
+        if (blankNodeScopeIsClosed(blankNodeScope))
+          (blankNodeScope, closurePlusMainScope.tail)
+        else
+          partitionBlankNodeScope(entities, potentialScopeEndIndex + 1)
+      }
+    }
+
+
   val AnotherPredicateNext = ";"
   val AnotherObjectNext = ","
   val AnotherSubjectNext = "."
@@ -126,18 +143,18 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case BlankNodeWithNestedTriplesStart #:: rest => {
         val newBlankNode = parserState.nextBlankNode
-        val (nestedBlankNodeGraph, mainGraph) = rest.span(_ != BlankNodeWithNestedTriplesEnd)
+        val (nestedBlankNodeGraph, mainGraph) = partitionBlankNodeScope(rest)
         val nestedBlankNodeScope = parserState withNode newBlankNode withPartial Subject(newBlankNode)
         parserState.partialTriple match {
 
           case EmptyTriple =>
             triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
-              triplesFromEntities(mainGraph.tail, nestedBlankNodeScope)
+              triplesFromEntities(mainGraph, nestedBlankNodeScope)
 
           case SubjectAndPredicate(subject, predicate) =>
             Triple(subject, predicate, newBlankNode) #::
               triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
-              triplesFromEntities(mainGraph.tail, parserState)
+              triplesFromEntities(mainGraph, parserState)
 
           case _ => throw new TurtleParseException(s"unexpected '[' encountered. Parser State: $parserState ")
         }

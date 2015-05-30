@@ -161,6 +161,21 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
     }
 
+    "partition the entity stream into scopes" in {
+
+      "when the blank node scope is flat" in new PartitionBlankNodeScopeScope {
+        val entities = Stream("a", "foaf:Person", "]", ".")
+        val scopes = unmarshaller invokePrivate partitionBlankNodeScope(entities, 0)
+        scopes must be equalTo (Stream("a", "foaf:Person"), Stream("."))
+      }
+
+      "when the blank node scope is nested" in new PartitionBlankNodeScopeScope {
+        val entities = Stream("a", "[", "foaf:name", "[]", "]", ";", "foaf:knows", "[]", "]", ".")
+        val scopes = unmarshaller invokePrivate partitionBlankNodeScope(entities, 0)
+        scopes must be equalTo (Stream("a", "[", "foaf:name", "[]", "]", ";", "foaf:knows", "[]"), Stream("."))
+      }
+    }
+
 
     "extract uris" in {
       "from a turtle resource in IRI format" in new IriExtractScope {
@@ -268,6 +283,10 @@ trait EntitiesFromLinesScope extends RdrrTurtleUnmarshallerScope with PrivateMet
   val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
 }
 
+trait PartitionBlankNodeScopeScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val partitionBlankNodeScope = PrivateMethod[(Stream[String], Stream[String])]('partitionBlankNodeScope)
+}
+
 
 class RdrrParserStateSpec extends Specification {
 
@@ -366,7 +385,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       "in the subject" in new RdrrTurtleUnmarshallerScope {
         val bobKnowsSomeone = """
             |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-            |[ foaf:name "Bob" ] foaf:knows [] .
+            |  [ foaf:name "Bob" ] foaf:knows [] .
           """.stripMargin
         val graph = unmarshaller.fromTurtle(bobKnowsSomeone)
 
@@ -377,12 +396,31 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       }
 
       "in the object" in new RdrrTurtleUnmarshallerScope {
-        val turtle = getResource("unlabeled-blank-nodes-with-nested-triples.ttl")
-        val graph = unmarshaller.fromTurtle(turtle)
+        val someoneKnowsBob = """ # http://www.w3.org/TR/turtle/#BNodes - Example 15
+            |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+            |  [] foaf:knows [ foaf:name "Bob" ] .
+          """.stripMargin
+        val graph = unmarshaller.fromTurtle(someoneKnowsBob)
         graph must be equalTo Graph(
           Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
           Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
         )
+      }
+
+      "within nested triples" in new RdrrTurtleUnmarshallerScope {
+        val doublyNestedBlankNodes = getResource("complex-anonymous-nested-blank-nodes.ttl")
+        val graph = RdrrTurtleUnmarshaller.fromTurtle(doublyNestedBlankNodes)
+        graph must containTheSameElementsAs {
+          Graph(
+            Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Alice")),
+            Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
+            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/mbox"), Resource("bob:example.com")),
+            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-3")),
+            Triple(BlankNode("blank-3"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Eve"))
+          )
+        }
+
       }
     }
 
