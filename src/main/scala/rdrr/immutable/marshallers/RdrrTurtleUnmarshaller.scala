@@ -12,17 +12,18 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
+  
+  val EmptyLine = """^\s*$""".r
+  val CommentLine = """^\s*#.*$""".r
+  val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
+  val UnlabeledBlankNodeEtc = """^\s*\[\s*\]\s*(.*)$""".r
+  val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes
+  val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
+  val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
+  val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
+  val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
 
   private[this] def entitiesFromLines(lines: Stream[String]): Stream[String] = {
-    val EmptyLine = """^\s*$""".r
-    val CommentLine = """^\s*#.*$""".r
-    val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
-    val UnlabeledBlankNodeEtc = """^\s*\[\s*\]\s*(.*)$""".r
-    val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Labeled Blank Nodes
-    val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
-    val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
-    val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
-    val PunctuationEtc = """^\s*([;,.])\s*(.*)$""".r
 
     lines match {
 
@@ -57,6 +58,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
         throw new TurtleParseException(s"RDRR Turtle Marshaller could not parse the line: '$unmatchedLine'")
     }
   }
+
 
   case class ParserState(basePrefix: Option[BasePrefix] = None,
                          prefixes: Seq[Prefix] = Nil,
@@ -101,14 +103,15 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   case class Subject(subject: RdfResource) extends PartialTriple
   case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
 
+
+  val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
+  val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
+  val AnotherPredicateNext = ";"
+  val AnotherObjectNext = ","
+  val AnotherSubjectNext = "."
+
   private[this] def triplesFromEntities(entities: Stream[String],
                                         parserState: ParserState = ParserState.Empty): Stream[Triple] = {
-
-    val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
-    val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
-    val AnotherPredicateNext = ";"
-    val AnotherObjectNext = ","
-    val AnotherSubjectNext = "."
 
     entities match {
 
@@ -150,10 +153,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   }
 
 
+  val UriResource = "^<([^:/?#]+:.*)>$".r // URI with scheme - RFC 3986
+  val RelativeUriResource = "<(.*)>".r
+  val PrefixedResource = "(.*):(.*)".r
+
   private[this] def iriFromTurtle(turtleRepresentation: String, parserState: ParserState): String = {
-    val UriResource = "^<([^:/?#]+:.*)>$".r // URI with scheme - RFC 3986
-    val RelativeUriResource = "<(.*)>".r
-    val PrefixedResource = "(.*):(.*)".r
 
     def withPrefix(resource: String)(prefix: RdfPrefix) = prefix.path + resource
 
@@ -174,9 +178,11 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
   }
 
+
+  val LabeledBlankNode = """^_:([^\s]*)$""".r
+  val UnlabeledBlankNode = "[]"
+
   private[this] def resourceFromTurtle(turtleRepresentation: String, parserState: ParserState): RdfResource = {
-    val LabeledBlankNode = """^_:([^\s]*)$""".r
-    val UnlabeledBlankNode = "[]"
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
@@ -185,13 +191,15 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
   }
 
+
+  val StringLiteralWithLanguageMatcher = """^"(.*)"@(.*)$""".r
+  val SimpleStringLiteralMatcher = """^"(.*)"$""".r
+  val StringLiteralWithCustomIRIMatcher = """^"(.*)"\^\^(.*)$""".r
+  val BooleanLiteralMatcher = """^(true|false)$""".r
+  val IntegerLiteralMatcher = """^\+?(-?[0-9]+)$""".r
+  val DecimalLiteralMatcher = """^\+?(-?[0-9]*\.[0-9]+)$""".r
+
   private[this] def nodeFromTurtle(turtleRepresentation: String, parserState: ParserState): GraphNode = {
-    val StringLiteralWithLanguageMatcher = """^"(.*)"@(.*)$""".r
-    val SimpleStringLiteralMatcher = """^"(.*)"$""".r
-    val StringLiteralWithCustomIRIMatcher = """^"(.*)"\^\^(.*)$""".r
-    val BooleanLiteralMatcher = """^(true|false)$""".r
-    val IntegerLiteralMatcher = """^\+?(-?[0-9]+)$""".r
-    val DecimalLiteralMatcher = """^\+?(-?[0-9]*\.[0-9]+)$""".r
 
     turtleRepresentation match {
       case StringLiteralWithLanguageMatcher(string, language) => LanguageStringLiteral(string, language)
