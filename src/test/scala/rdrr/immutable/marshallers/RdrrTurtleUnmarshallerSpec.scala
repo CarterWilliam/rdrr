@@ -62,6 +62,12 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
         splitResources must be equalTo Stream("[]", "a", "[]", ".")
       }
 
+      "containing unlabeled blank nodes with nested triples" in new EntitiesFromLinesScope {
+        val resourceString = " [ a foaf:Person ]."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("[", "a", "foaf:Person", "]", ".")
+      }
+
       "containing String literals" in {
 
         "with whitespace" in new EntitiesFromLinesScope {
@@ -240,6 +246,30 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
   }
 
+}
+
+trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
+  val unmarshaller = RdrrTurtleUnmarshaller
+}
+
+trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val iriFromTurtle = PrivateMethod[String]('iriFromTurtle)
+}
+
+trait CreateResourcesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val resourceFromTurtle = PrivateMethod[RdfResource]('resourceFromTurtle)
+}
+
+trait CreateLiteralsScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val nodeFromTurtle = PrivateMethod[GraphNode]('nodeFromTurtle)
+}
+
+trait EntitiesFromLinesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
+}
+
+
+class RdrrParserStateSpec extends Specification {
 
   "The ParserState" should {
 
@@ -293,22 +323,26 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
     }
   }
 
+}
 
-  "marshal from" in {
 
-    "a graph with Resources from Turtle" in new RdrrTurtleUnmarshallerScope {
+class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
+
+  "The RdrrTurtleUnmarshaller can marshal from" in {
+
+    "a turtle graph with Resources" in new RdrrTurtleUnmarshallerScope {
       val turtle = getResource("bieber-is-an-artist.ttl")
       val graph = unmarshaller.fromTurtle(turtle)
       graph must have size 1
     }
 
-    "a graph with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {
+    "a turtle graph with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {
       val turtle = getResource("bieber.ttl")
       val graph = unmarshaller.fromTurtle(turtle)
       graph must have size 3
     }
 
-    "a graph with blank nodes" in new Scope with TestHelpers {
+    "a turtle graph with blank nodes" in new Scope with TestHelpers {
       // The Jena marshaller does not seem to extract the labels given in the turtle
       val blankNodeTurtle = getResource("labeled-blank-nodes.ttl")
       val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
@@ -318,7 +352,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       graph(1).`object` must be equalTo BlankNode("alice")
     }
 
-    "a graph with unlabeled blank nodes" in new Scope with TestHelpers {
+    "a turtle graph with unlabeled blank nodes" in new Scope with TestHelpers {
       val blankNodeTurtle =
         """[] <http://xmlns.com/foaf/0.1/knows> [] . """
       val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
@@ -327,30 +361,31 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       }
     }
 
+    "a turtle graph with unlabeled blank nodes containing nested triples" in {
+
+      "in the subject" in new RdrrTurtleUnmarshallerScope {
+        val bobKnowsSomeone = """
+            |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+            |[ foaf:name "Bob" ] foaf:knows [] .
+          """.stripMargin
+        val graph = unmarshaller.fromTurtle(bobKnowsSomeone)
+
+        graph must be equalTo Graph(
+          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
+          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2"))
+        )
+      }
+
+      "in the object" in new RdrrTurtleUnmarshallerScope {
+        val turtle = getResource("unlabeled-blank-nodes-with-nested-triples.ttl")
+        val graph = unmarshaller.fromTurtle(turtle)
+        graph must be equalTo Graph(
+          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
+        )
+      }
+    }
+
   }
-
-}
-
-trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
-  val unmarshaller = RdrrTurtleUnmarshaller
-}
-
-trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
-  val iriFromTurtle = PrivateMethod[String]('iriFromTurtle)
-}
-
-trait CreateResourcesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
-  val resourceFromTurtle = PrivateMethod[RdfResource]('resourceFromTurtle)
-}
-
-trait CreateLiteralsScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
-  val nodeFromTurtle = PrivateMethod[GraphNode]('nodeFromTurtle)
-}
-
-trait EntitiesFromLinesScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
-  val entitiesFromLines = PrivateMethod[Stream[String]]('entitiesFromLines)
-}
-
-trait ParserStateScope extends Scope {
 
 }

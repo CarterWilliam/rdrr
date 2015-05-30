@@ -1,7 +1,6 @@
 package rdrr.immutable.marshallers
 
 import rdrr.immutable._
-
 import scala.io.Source
 
 object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
@@ -12,7 +11,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
   def fromTurtle(lines: Stream[String]) = Graph(triplesFromEntities(entitiesFromLines(lines)))
 
-  
+
   val EmptyLine = """^\s*$""".r
   val CommentLine = """^\s*#.*$""".r
   val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
@@ -106,6 +105,10 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
   val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
+
+  val BlankNodeWithNestedTriplesStart = "["
+  val BlankNodeWithNestedTriplesEnd = "]"
+
   val AnotherPredicateNext = ";"
   val AnotherObjectNext = ","
   val AnotherSubjectNext = "."
@@ -120,6 +123,25 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case PrefixExtractor(prefix, uri) #:: rest =>
         triplesFromEntities(rest, parserState withPrefix Prefix(prefix, uri))
+
+      case BlankNodeWithNestedTriplesStart #:: rest => {
+        val newBlankNode = parserState.nextBlankNode
+        val (nestedBlankNodeGraph, mainGraph) = rest.span(_ != BlankNodeWithNestedTriplesEnd)
+        val nestedBlankNodeScope = parserState withNode newBlankNode withPartial Subject(newBlankNode)
+        parserState.partialTriple match {
+
+          case EmptyTriple =>
+            triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
+              triplesFromEntities(mainGraph.tail, nestedBlankNodeScope)
+
+          case SubjectAndPredicate(subject, predicate) =>
+            Triple(subject, predicate, newBlankNode) #::
+              triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
+              triplesFromEntities(mainGraph.tail, parserState)
+
+          case _ => throw new TurtleParseException(s"unexpected '[' encountered. Parser State: $parserState ")
+        }
+      }
 
       case entity #:: rest => parserState.partialTriple match {
 
