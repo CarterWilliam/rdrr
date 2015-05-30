@@ -63,7 +63,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
                          blankNodes: Seq[BlankNode] = Nil,
                          partialTriple: PartialTriple = EmptyTriple) {
 
-    def + (prefix: RdfPrefix): ParserState = prefix match {
+    def withPrefix (prefix: RdfPrefix): ParserState = prefix match {
       case basePrefix: BasePrefix =>
         copy(basePrefix = Some(basePrefix))
       case standardPrefix: Prefix =>
@@ -71,9 +71,14 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
         copy(prefixes = updatePrefixes)
     }
 
-    val BlankNodeAlphabet: Seq[String] = ('a' to 'z').map(_.toString)
+    def withPartial(partial: PartialTriple) = copy(partialTriple = partial)
 
-    def generateBlankNode: BlankNode = {
+    def withNode(node: GraphNode) = node match {
+      case blankNode: BlankNode => copy(blankNodes = blankNode +:blankNodes)
+      case _ => this
+    }
+
+    def nextBlankNode: BlankNode = {
 
       def iteration(n: Int): BlankNode = {
         if (blankNodes contains BlankNode("blank-" + n))
@@ -108,31 +113,34 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     entities match {
 
       case BasePrefixExtractor(path) #:: rest =>
-        triplesFromEntities(rest, parserState + BasePrefix(path))
+        triplesFromEntities(rest, parserState withPrefix BasePrefix(path))
 
       case PrefixExtractor(prefix, uri) #:: rest =>
-        triplesFromEntities(rest, parserState + Prefix(prefix, uri))
+        triplesFromEntities(rest, parserState withPrefix Prefix(prefix, uri))
 
       case entity #:: rest => parserState.partialTriple match {
 
         case EmptyTriple =>
-          val subjectPartial = Subject(resourceFromTurtle(entity, parserState))
-          triplesFromEntities(rest, parserState.copy(partialTriple = subjectPartial))
+          val subjectNode = resourceFromTurtle(entity, parserState)
+          val newState = parserState withNode subjectNode withPartial Subject(subjectNode)
+          triplesFromEntities(rest, newState)
 
         case Subject(subject) =>
           val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
-          triplesFromEntities(rest, parserState.copy(partialTriple = subjectPredicatePartial))
+          triplesFromEntities(rest, parserState withPartial subjectPredicatePartial)
 
         case SubjectAndPredicate(subject, predicate) => {
           entity match {
             case AnotherObjectNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = SubjectAndPredicate(subject, predicate)))
+              triplesFromEntities(rest, parserState withPartial SubjectAndPredicate(subject, predicate))
             case AnotherPredicateNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = Subject(subject)))
+              triplesFromEntities(rest, parserState withPartial Subject(subject))
             case AnotherSubjectNext =>
-              triplesFromEntities(rest, parserState.copy(partialTriple = EmptyTriple))
+              triplesFromEntities(rest, parserState withPartial EmptyTriple)
             case resourceTurtle =>
-              Triple(subject, predicate, nodeFromTurtle(resourceTurtle, parserState)) #:: triplesFromEntities(rest, parserState)
+              val objectNode = nodeFromTurtle(resourceTurtle, parserState)
+              val newState = parserState withNode objectNode
+              Triple(subject, predicate, objectNode) #:: triplesFromEntities(rest, newState)
           }
         }
       }
@@ -172,7 +180,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
-      case UnlabeledBlankNode => parserState.generateBlankNode
+      case UnlabeledBlankNode => parserState.nextBlankNode
       case resourceString => Resource(iriFromTurtle(resourceString, parserState))
     }
   }

@@ -4,7 +4,7 @@ import rdrr.immutable._
 import org.scalatest.PrivateMethodTester
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{ParserState, EmptyTriple}
+import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{Subject, ParserState, EmptyTriple}
 import utilities.TestHelpers
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {
@@ -162,12 +162,12 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
         typeIri must be equalTo "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
       "from a turtle resource in prefix:name format" in new IriExtractScope {
-        val parserState = ParserState.Empty + Prefix("mo", "http://purl.org/ontology/mo/")
+        val parserState = ParserState.Empty withPrefix Prefix("mo", "http://purl.org/ontology/mo/")
         val musicArtistIri = unmarshaller invokePrivate iriFromTurtle("mo:MusicArtist", parserState)
         musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
       }
       "from a relative URI turtle resource" in new IriExtractScope {
-        val parserState = ParserState.Empty + BasePrefix("http://purl.org/ontology/mo/")
+        val parserState = ParserState.Empty withPrefix BasePrefix("http://purl.org/ontology/mo/")
         val musicArtistIri = unmarshaller invokePrivate iriFromTurtle("<MusicArtist>", parserState)
         musicArtistIri must be equalTo "http://purl.org/ontology/mo/MusicArtist"
       }
@@ -246,7 +246,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
     "return the correct state when a standard prefix is added" in  {
       val musicOntologyPrefix = Prefix("mo", "http://purl.org/ontology/mo/")
       val expectedState = ParserState(prefixes = Seq(musicOntologyPrefix))
-      ParserState.Empty + musicOntologyPrefix must be equalTo expectedState
+      ParserState.Empty withPrefix musicOntologyPrefix must be equalTo expectedState
     }
 
     "overwrite older prefix mappings if they have the same prefix" in {
@@ -257,13 +257,13 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       val initialState = ParserState(prefixes = Seq(musicOntologyPrefix, wikipediaPrefix))
       val expectedState = ParserState(prefixes = Seq(wikipediaPrefix, kanzakiMusicOntologyPrefix))
 
-      initialState + kanzakiMusicOntologyPrefix must be equalTo expectedState
+      initialState withPrefix kanzakiMusicOntologyPrefix must be equalTo expectedState
     }
 
     "return the correct state when a base prefix is added" in {
       val musicOntologyBasePrefix = BasePrefix("http://purl.org/ontology/mo/")
       val expectedState = ParserState(basePrefix = Some(musicOntologyBasePrefix))
-      ParserState.Empty + musicOntologyBasePrefix must be equalTo expectedState
+      ParserState.Empty withPrefix musicOntologyBasePrefix must be equalTo expectedState
     }
 
     "overwrite older base prefixes" in {
@@ -271,13 +271,25 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       val basePrefix2 = BasePrefix("http://base.prefix/2/")
       val initialState = ParserState(basePrefix = Some(basePrefix1))
       val expectedState = ParserState(basePrefix = Some(basePrefix2))
-      initialState + basePrefix2 must be equalTo expectedState
+      initialState withPrefix basePrefix2 must be equalTo expectedState
+    }
+
+    "overwrite partial triples" in {
+      val initialState = ParserState(partialTriple = Subject(BlankNode("blank-1")))
+      initialState withPartial EmptyTriple must be equalTo ParserState.Empty
     }
 
     "generate blank nodes with unique labels" in {
       val initialState = ParserState.Empty
-      val newBlankNode = initialState.generateBlankNode
+      val newBlankNode = initialState.nextBlankNode
       newBlankNode.label must be equalTo "blank-1"
+    }
+
+    "add nodes to blank nodes when appropriate" in {
+      val resourceNode = Resource("bieber")
+      ParserState.Empty withNode resourceNode  must be equalTo ParserState.Empty
+      val blankNode = BlankNode("label")
+      ParserState.Empty withNode blankNode must be equalTo ParserState(blankNodes = Seq(blankNode))
     }
   }
 
@@ -304,6 +316,15 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       graph(0).`object` must be equalTo BlankNode("bob")
       graph(1).subject must be equalTo BlankNode("bob")
       graph(1).`object` must be equalTo BlankNode("alice")
+    }
+
+    "a graph with unlabeled blank nodes" in new Scope with TestHelpers {
+      val blankNodeTurtle =
+        """[] <http://xmlns.com/foaf/0.1/knows> [] . """
+      val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
+      graph must be equalTo Graph {
+        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2"))
+      }
     }
 
   }
