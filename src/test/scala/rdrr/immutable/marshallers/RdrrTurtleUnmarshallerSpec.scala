@@ -71,13 +71,31 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       "containing unlabeled blank nodes" in new EntitiesFromLinesScope {
         val resourceString = " [] a []."
         val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
-        splitResources must be equalTo Stream("[]", "a", "[]", ".")
+        splitResources must be equalTo Stream("[", "]", "a", "[", "]", ".")
       }
 
       "containing unlabeled blank nodes with nested triples" in new EntitiesFromLinesScope {
         val resourceString = " [ a foaf:Person ]."
         val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
         splitResources must be equalTo Stream("[", "a", "foaf:Person", "]", ".")
+      }
+
+      "containing unlabeled blank nodes with nested triples and dodgy spacing" in new EntitiesFromLinesScope {
+        val resourceString = " [a foaf:Person]."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("[", "a", "foaf:Person", "]", ".")
+      }
+
+      "containing collections" in new EntitiesFromLinesScope {
+        val resourceString = " ( 1 2 3 ) ."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("(", "1", "2", "3", ")", ".")
+      }
+
+      "containing collections with dodgy spacing" in new EntitiesFromLinesScope {
+        val resourceString = " (1 2 3)."
+        val splitResources = unmarshaller invokePrivate entitiesFromLines(Stream(resourceString))
+        splitResources must be equalTo Stream("(", "1", "2", "3", ")", ".")
       }
 
       "containing String literals" in {

@@ -18,7 +18,8 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   val EmptyLine = """^\s*$""".r
   val CommentLine = """^\s*#.*$""".r
   val PrefixLine = """^((?:@base|@prefix|BASE|PREFIX).*)\s*$""".r
-  val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Blank Nodes
+  val ScopeChangeEtc = """\s*(\[|\]|\(|\))\s*(.*)""".r
+  val EntityEtc = """^\s*([^\s'"]*[^\s'";,.\]\)])\s*(.*)$""".r // Resources, Literals, labeled Blank Nodes
   val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
   val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
   val MultilineStringLiteralBegin = "^\\s*((\"\"\"|''').*)".r
@@ -34,6 +35,9 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
       case PrefixLine(prefixLine) #:: moreLines =>
         prefixLine #:: entitiesFromLines(moreLines)
+
+      case ScopeChangeEtc(scopeCharacter, etc) #:: moreLines =>
+        scopeCharacter #:: entitiesFromLines(etc #:: moreLines)
 
       case EntityEtc(resource, etc) #:: moreLines =>
         resource #:: entitiesFromLines(etc #:: moreLines)
