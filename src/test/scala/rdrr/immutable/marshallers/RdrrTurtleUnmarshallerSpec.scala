@@ -26,28 +26,40 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
           "." )
       }
 
-      "containing prefixed resources" in new EntitiesFromLinesScope {
+      "containing prefixed resources in standard and SPARQL syntax" in new EntitiesFromLinesScope {
         val resourceString =
           """
             |@prefix wiki: <https://en.wikipedia.org/wiki/> .
-            |@prefix mo: <http://purl.org/ontology/mo/> .
+            |PREFIX mo: <http://purl.org/ontology/mo/>
             |wiki:Justin_Bieber a mo:MusicArtist .""".stripMargin
         val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
         splitResources must be equalTo Stream(
           "@prefix wiki: <https://en.wikipedia.org/wiki/> .",
-          "@prefix mo: <http://purl.org/ontology/mo/> .",
+          "PREFIX mo: <http://purl.org/ontology/mo/>",
           "wiki:Justin_Bieber", "a", "mo:MusicArtist", ".")
       }
 
-      "containing base-prefixed resources" in new EntitiesFromLinesScope {
-        val resourceString =
+      "containing base-prefixed resources" in {
+        "in standard syntax" in new EntitiesFromLinesScope {
+          val resourceString =
           """
             |@base wiki: <https://en.wikipedia.org/wiki/> .
             |:Justin_Bieber a mo:MusicArtist .""".stripMargin
-        val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
-        splitResources must be equalTo Stream(
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+          splitResources must be equalTo Stream(
           "@base wiki: <https://en.wikipedia.org/wiki/> .",
           ":Justin_Bieber", "a", "mo:MusicArtist", ".")
+        }
+        "in SPARQL syntax" in new EntitiesFromLinesScope {
+          val resourceString =
+            """
+              |BASE wiki: <https://en.wikipedia.org/wiki/>
+              |:Justin_Bieber a mo:MusicArtist .""".stripMargin
+          val splitResources = unmarshaller invokePrivate entitiesFromLines(resourceString.lines.toStream)
+          splitResources must be equalTo Stream(
+            "BASE wiki: <https://en.wikipedia.org/wiki/>",
+            ":Justin_Bieber", "a", "mo:MusicArtist", ".")
+        }
       }
 
       "containing labeled blank nodes" in new EntitiesFromLinesScope {
@@ -374,10 +386,32 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
   "The RdrrTurtleUnmarshaller can marshal from" in {
 
-    "a turtle graph with Resources" in new RdrrTurtleUnmarshallerScope {
-      val turtle = getResource("bieber-is-an-artist.ttl")
+    "a turtle graph with Prefixes" in new RdrrTurtleUnmarshallerScope {
+      val turtle = """
+          |@base <https://en.wikipedia.org/wiki/> .
+          |@prefix mo: <http://purl.org/ontology/mo/> .
+          |<Justin_Bieber> a mo:MusicArtist .
+        """.stripMargin
+
       val graph = unmarshaller.fromTurtle(turtle)
-      graph must have size 1
+      graph must be equalTo Graph(
+        Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://purl.org/ontology/mo/MusicArtist")) )
+    }
+
+    "a turtle graph with Prefixes defined using SPARQL syntax" in new RdrrTurtleUnmarshallerScope {
+      val turtle = """
+          |BASE <https://en.wikipedia.org/wiki/>
+          |PREFIX mo: <http://purl.org/ontology/mo/>
+          |<Justin_Bieber> a mo:MusicArtist .
+        """.stripMargin
+      
+      val graph = unmarshaller.fromTurtle(turtle)
+      graph must be equalTo Graph(
+        Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
+          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://purl.org/ontology/mo/MusicArtist")) )
     }
 
     "a turtle graph with resources and literals from Turtle" in new RdrrTurtleUnmarshallerScope {

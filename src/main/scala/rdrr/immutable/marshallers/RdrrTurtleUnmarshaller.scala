@@ -17,7 +17,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val EmptyLine = """^\s*$""".r
   val CommentLine = """^\s*#.*$""".r
-  val PrefixLine = """^\s*(@(?:base|BASE|prefix|PREFIX)\s+.*\.)\s*$""".r
+  val PrefixLine = """^((?:@base|@prefix|BASE|PREFIX).*)\s*$""".r
   val EntityEtc = """^\s*([^\s'"]*[^\s'";,.])\s*(.*)$""".r // Resources, Literals, Blank Nodes
   val StringLiteralEtc = """^\s*(("|').*?\2[^\s;,.]*)\s*(.*)$""".r // also matches Triple quoted string literals!
   val TripleQuotedStringLiteralEtc = "\\s*((\"\"\"|''')(?s).*?\\2[^\\s;,.]*)\\s*(.*)".r
@@ -102,8 +102,8 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
 
 
-  val BasePrefixExtractor = """^@(?:base|BASE)\s+<(.*)>\s*\.$""".r
-  val PrefixExtractor = """^@(?:prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.$""".r
+  val BasePrefixExtractor = """^(?:@base|BASE)\s+<(.*)>\s*\.?$""".r
+  val PrefixExtractor = """^(?:@prefix|PREFIX)\s+(.*):\s*<(.*)>\s*\.?$""".r
 
   val AnotherPredicateNext = ";"
   val AnotherObjectNext = ","
