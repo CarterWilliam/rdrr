@@ -61,7 +61,11 @@ class RdrrTurtleMarshallerSpec extends Specification {
       marshaller invokePrivate asTurtle(blankNode) must be equalTo "_:label"
     }
 
-    "serialise to Turtle format" in new RdrrTurtleMarshallerScope {
+    "correctly output the empty graph" in new RdrrTurtleMarshallerScope {
+      marshaller.toTurtle(Graph.Empty) must be equalTo ""
+    }
+
+    "serialise a simple graph to Turtle" in new RdrrTurtleMarshallerScope {
       val graph = Graph(Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
         Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),

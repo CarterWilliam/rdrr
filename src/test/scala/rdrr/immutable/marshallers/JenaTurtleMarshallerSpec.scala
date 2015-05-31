@@ -9,6 +9,10 @@ class JenaTurtleMarshallerSpec extends Specification {
 
   "The Jena Marshaller" can {
 
+    "output the empty graph" in new JenaTurtleMarshallerScope {
+      marshaller.toTurtle(Graph.Empty) must be equalTo ""
+    }
+
     "serialise to Turtle format" in new JenaTurtleMarshallerScope {
       val graph = Graph(Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
