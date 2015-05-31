@@ -185,8 +185,8 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
     "a turtle graph with nested blank nodes in collections" in new RdrrTurtleUnmarshallerScope {
       val someoneKnowsZero =
         """
-          |@prefix : <http://example.org/stuff/1.0/> .
-          |  :a :b ( "apple" [ :b :c ] ) .
+          |PREFIX : <http://example.org/stuff/1.0/>
+          |(1 [:p :q] ( 2 ) ) :p2 :q2 .
         """.stripMargin
 
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
