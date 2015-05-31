@@ -4,7 +4,7 @@ import rdrr.immutable._
 import org.scalatest.PrivateMethodTester
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import utilities.TestHelpers
+import utilities.{FaultyRandomStrings, PredictableRandomStrings, TestHelpers}
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {
 
@@ -211,13 +211,32 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       "convert a turtle statement" in {
         "with an unlabeled blank node into the labeled equivilent" in new ExpandBlankNodeScope {
           val entities = Stream("[", "]", "a", "foaf:Person", ".")
-          unmarshaller invokePrivate expandBlankNodes(entities) must be equalTo Stream("_:blank-1", "a", "foaf:Person", ".")
+          unmarshaller.expandBlankNodes(entities) must be equalTo Stream("_:blank-1", "a", "foaf:Person", ".")
         }
 
         "with an unlabeled blank node containing nested triples into the labeled equivilent" in new ExpandBlankNodeScope {
           val entities = Stream("[", "foaf:name", "\"me\"", "]", "a", "foaf:Person", ".")
-          unmarshaller invokePrivate expandBlankNodes(entities) must be equalTo Stream(
+          unmarshaller.expandBlankNodes(entities) must be equalTo Stream(
             "_:blank-1", "a", "foaf:Person", ".", "_:blank-1", "foaf:name", "\"me\"", ".")
+        }
+
+        "with doubly nested blank nodes into the labeled equivilent" in new ExpandBlankNodeScope {
+          val someoneKnowsSomeoneCalledDave = Stream("[", "foaf:knows", "[", "foaf:name", "\"Dave\"", "]", "]", "a", "foaf:Person", ".")
+          unmarshaller.expandBlankNodes(someoneKnowsSomeoneCalledDave) must be equalTo Stream (
+            "_:blank-1", "a", "foaf:Person", ".", "_:blank-1", "foaf:knows", "_:blank-2", ".",
+            "_:blank-2", "foaf:name", "\"Dave\"", "." )
+        }
+
+        "producing unique blank nodes when a blank node has already been generated" in new ExpandBlankNodeScope {
+          val entities = Stream("[", "]", "a", "[", "]", ".")
+          unmarshallerWithFaultyBlankNodeGeneration.expandBlankNodes(entities) must be equalTo Stream (
+            "_:blank-1", "a", "_:blank-2", ".")
+        }
+
+        "producing unique blank nodes when a labeled blank node exists with the same label" in new ExpandBlankNodeScope {
+          val entities = Stream("[", "]", "a", "_:blank-1", ".")
+          unmarshaller.expandBlankNodes(entities) must be equalTo Stream (
+            "_:blank-2", "a", "_:blank-1", ".")
         }
       }
     }
@@ -281,13 +300,6 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
       }
       "from a labeled blank node" in new CreateResourcesScope {
         unmarshaller invokePrivate resourceFromTurtle("_:someone", ParserState.Empty) must be equalTo BlankNode("someone")
-      }
-      "from an unlabelled blank node" in new CreateResourcesScope {
-        unmarshaller invokePrivate resourceFromTurtle("[]", ParserState.Empty) must be equalTo BlankNode("blank-1")
-      }
-      "from a second unlabelled blank node" in new CreateResourcesScope {
-        val parserState = ParserState(blankNodes = Seq(BlankNode("blank-1")))
-        unmarshaller invokePrivate resourceFromTurtle("[]", parserState) must be equalTo BlankNode("blank-2")
       }
     }
 
@@ -363,7 +375,12 @@ trait ConvertCollectionScope extends RdrrTurtleUnmarshallerScope with PrivateMet
   val expandCollections = PrivateMethod[Stream[String]]('expandCollections)
 }
 
-trait ExpandBlankNodeScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+trait ExpandBlankNodeScope extends Scope with PrivateMethodTester {
+
+  object unmarshaller extends RdrrTurtleUnmarshaller with PredictableRandomStrings
+
+  object unmarshallerWithFaultyBlankNodeGeneration extends RdrrTurtleUnmarshaller with FaultyRandomStrings
+
   val expandBlankNodes = PrivateMethod[Stream[String]]('expandBlankNodes)
 }
 
@@ -410,20 +427,6 @@ class RdrrParserStateSpec extends Specification {
       initialState withPartial EmptyTriple must be equalTo ParserState.Empty
     }
 
-    "generate blank nodes with unique labels" in {
-      val initialState = ParserState(prefixes = Nil)
-      val newBlankNode = initialState.nextBlankNode
-      newBlankNode.label must be equalTo "blank-1"
-    }
-
-    "add nodes to blank nodes when appropriate" in {
-      val initialState = ParserState(prefixes = Nil)
-
-      val resourceNode = Resource("bieber")
-      initialState withNode resourceNode  must be equalTo initialState
-      val blankNode = BlankNode("label")
-      initialState withNode blankNode must be equalTo ParserState(blankNodes = Seq(blankNode))
-    }
   }
 
 }

@@ -1,17 +1,18 @@
 package rdrr.immutable.marshallers
 
 import rdrr.immutable._
+import rdrr.util.RandomStrings
 
 import scala.io.Source
 
-class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
+class RdrrTurtleUnmarshaller extends TurtleUnmarshaller with RandomStrings {
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
 
   private def fromTurtle(lines: Stream[String]) = {
     val entities = entitiesFromLines(lines)
-    val entitiesWithCollectionsExpanded = expandCollections(entities)
-    Graph(triplesFromEntities(entitiesWithCollectionsExpanded))
+    val rewrittenEntities = expandBlankNodes { expandCollections { entities } }
+    Graph(triplesFromEntities(rewrittenEntities))
   }
 
   val EmptyLine = """^\s*$""".r
@@ -71,20 +72,31 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val UnlabeledBlankNodeStart = "["
   val UnlabeledBlankNodeEnd = "]"
-  private def expandBlankNodes(entities: Stream[String]): Stream[String] = entities match {
-    case UnlabeledBlankNodeStart #:: UnlabeledBlankNodeEnd #:: more =>
-      val newBlankNode = "_:blank-" + 1
-      newBlankNode #:: expandBlankNodes(more)
+  private def generateBlankNodeId() = randomAlpha(4)
+  private def generateBlankNode(unavailable: Seq[String]): String = {
+    val newBlankNode = "_:blank-" + generateBlankNodeId()
+    if (unavailable.contains(newBlankNode)) generateBlankNode(unavailable) else newBlankNode
+  }
+  def expandBlankNodes(entities: Stream[String]): Stream[String] = {
 
-    case UnlabeledBlankNodeStart #:: more =>
-      val newBlankNode = "_:blank-" + 1
-      val (blankNodeScope, mainScope) = partitionBlankNodeScope(more)
-      newBlankNode #:: expandBlankNodes { mainScope #::: newBlankNode #:: blankNodeScope :+ "." }
+    def expandBlankNodesIteration(entities: Stream[String], alreadySeen: Seq[String]): Stream[String] = entities match {
+      case UnlabeledBlankNodeStart #:: UnlabeledBlankNodeEnd #:: more =>
+        val newBlankNode = generateBlankNode(alreadySeen ++ entities)
+        newBlankNode #:: expandBlankNodesIteration(more, newBlankNode +: alreadySeen)
 
-    case entity #:: more =>
-      entity #:: expandBlankNodes(more)
+      case UnlabeledBlankNodeStart #:: more =>
+        val blankNode = generateBlankNode(alreadySeen ++ entities)
+        val (blankNodeScope, mainScope) = partitionBlankNodeScope(more)
+        val rewrittenMainScope = mainScope #::: blankNode #:: blankNodeScope :+ "."
+        blankNode #:: expandBlankNodesIteration(rewrittenMainScope, blankNode +: alreadySeen)
 
-    case Stream.Empty => Stream.Empty
+      case entity #:: more =>
+        entity #:: expandBlankNodesIteration(more, entity +: alreadySeen)
+
+      case Stream.Empty => Stream.Empty
+    }
+
+    expandBlankNodesIteration(entities, Nil)
   }
 
 
@@ -97,7 +109,7 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   val BlankNodeWithNestedTriplesStart = "["
   val BlankNodeWithNestedTriplesEnd = "]"
-  
+
   private def partitionBlankNodeScope(entities: Stream[String], from: Int = 0): (Stream[String], Stream[String]) =
     partitionByScope(BlankNodeWithNestedTriplesStart, BlankNodeWithNestedTriplesEnd)(entities, from)
 
@@ -141,7 +153,7 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
 
   private def triplesFromEntities(entities: Stream[String],
-                                        parserState: ParserState = ParserState.Empty): Stream[Triple] = {
+                                  parserState: ParserState = ParserState.Empty): Stream[Triple] = {
 
     entities match {
 
@@ -151,31 +163,11 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case PrefixExtractor(prefix, uri) #:: rest =>
         triplesFromEntities(rest, parserState withPrefix Prefix(prefix, uri))
 
-      case BlankNodeWithNestedTriplesStart #:: rest => {
-        val newBlankNode = parserState.nextBlankNode
-        val (nestedBlankNodeGraph, mainGraph) = partitionBlankNodeScope(rest)
-        val nestedBlankNodeScope = parserState withNode newBlankNode withPartial Subject(newBlankNode)
-        parserState.partialTriple match {
-
-          case EmptyTriple =>
-            triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
-              triplesFromEntities(mainGraph, nestedBlankNodeScope)
-
-          case SubjectAndPredicate(subject, predicate) =>
-            Triple(subject, predicate, newBlankNode) #::
-              triplesFromEntities(nestedBlankNodeGraph, nestedBlankNodeScope) #:::
-              triplesFromEntities(mainGraph, parserState)
-
-          case _ => throw new TurtleParseException(s"unexpected '[' encountered. Parser State: $parserState ")
-        }
-      }
-
       case entity #:: rest => parserState.partialTriple match {
 
         case EmptyTriple =>
           val subjectNode = resourceFromTurtle(entity, parserState)
-          val newState = parserState withNode subjectNode withPartial Subject(subjectNode)
-          triplesFromEntities(rest, newState)
+          triplesFromEntities(rest, parserState withPartial Subject(subjectNode))
 
         case Subject(subject) =>
           val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
@@ -191,8 +183,7 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
               triplesFromEntities(rest, parserState withPartial EmptyTriple)
             case resourceTurtle =>
               val objectNode = nodeFromTurtle(resourceTurtle, parserState)
-              val newState = parserState withNode objectNode
-              Triple(subject, predicate, objectNode) #:: triplesFromEntities(rest, newState)
+              Triple(subject, predicate, objectNode) #:: triplesFromEntities(rest, parserState)
           }
         }
       }
@@ -229,13 +220,10 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
 
   val LabeledBlankNode = """^_:([^\s]*)$""".r
-  val UnlabeledBlankNode = "[]"
-
   private def resourceFromTurtle(turtleRepresentation: String, parserState: ParserState): RdfResource = {
 
     turtleRepresentation match {
       case LabeledBlankNode(label) => BlankNode(label)
-      case UnlabeledBlankNode => parserState.nextBlankNode
       case resourceString => Resource(iriFromTurtle(resourceString, parserState))
     }
   }
@@ -271,7 +259,6 @@ object RdfStandard {
 
 case class ParserState(basePrefix: Option[BasePrefix] = None,
                        prefixes: Seq[Prefix] = Nil,
-                       blankNodes: Seq[BlankNode] = Nil,
                        partialTriple: PartialTriple = EmptyTriple) {
 
   def withPrefix(prefix: RdfPrefix): ParserState = prefix match {
@@ -284,27 +271,10 @@ case class ParserState(basePrefix: Option[BasePrefix] = None,
 
   def withPartial(partial: PartialTriple) = copy(partialTriple = partial)
 
-  def withNode(node: GraphNode) = node match {
-    case blankNode: BlankNode => copy(blankNodes = blankNode +: blankNodes)
-    case _ => this
-  }
-
-  def nextBlankNode: BlankNode = {
-
-    def iteration(n: Int): BlankNode = {
-      if (blankNodes contains BlankNode("blank-" + n))
-        iteration(n + 1)
-      else
-        BlankNode("blank-" + n)
-    }
-
-    iteration(1)
-  }
-
 }
 
 object ParserState {
-  val Empty = ParserState(None, RdfStandard.prefixes, Nil, EmptyTriple)
+  val Empty = ParserState(None, RdfStandard.prefixes, EmptyTriple)
 }
 
 sealed abstract class PartialTriple
