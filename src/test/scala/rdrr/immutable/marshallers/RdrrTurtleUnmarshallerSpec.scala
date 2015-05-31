@@ -4,7 +4,6 @@ import rdrr.immutable._
 import org.scalatest.PrivateMethodTester
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import rdrr.immutable.marshallers.RdrrTurtleUnmarshaller.{Subject, ParserState, EmptyTriple}
 import utilities.TestHelpers
 
 class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester {
@@ -207,21 +206,46 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 
     }
 
-    "convert collections into blank node scopes" in new ConvertCollectionScope {
-      val entities = Stream("1", "<resource>")
-      val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "<resource>", ";", "rdf:rest",
-        "rdf:nil", "]", "]")
-      val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
-      actual must be equalTo expected
+    "Blank Nodes" in {
+
+      "convert a turtle statement" in {
+        "with an unlabeled blank node into the labeled equivilent" in new ExpandBlankNodeScope {
+          val entities = Stream("[", "]", "a", "foaf:Person", ".")
+          unmarshaller invokePrivate expandBlankNodes(entities) must be equalTo Stream("_:blank-1", "a", "foaf:Person", ".")
+        }
+
+        "with an unlabeled blank node containing nested triples into the labeled equivilent" in new ExpandBlankNodeScope {
+          val entities = Stream("[", "foaf:name", "\"me\"", "]", "a", "foaf:Person", ".")
+          unmarshaller invokePrivate expandBlankNodes(entities) must be equalTo Stream(
+            "_:blank-1", "a", "foaf:Person", ".", "_:blank-1", "foaf:name", "\"me\"", ".")
+        }
+      }
     }
 
-    "convert nested collections into blank node scopes" in new ConvertCollectionScope {
-      val entities = Stream("1", "(",  "2", ")", "3")
-      val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "(",  "2", ")", ";", "rdf:rest",
-        "[", "rdf:first", "3", ";", "rdf:rest", "rdf:nil", "]", "]", "]")
-      val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
-      expected.size; actual.size
-      actual must be equalTo expected
+    "Collections" in {
+
+      "convert collections into blank node scopes" in new ConvertCollectionScope {
+        val entities = Stream("1", "<resource>")
+        val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "<resource>", ";", "rdf:rest",
+          "rdf:nil", "]", "]")
+        val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
+        actual must be equalTo expected
+      }
+
+      "convert nested collections into blank node scopes" in new ConvertCollectionScope {
+        val entities = Stream("1", "(", "2", ")", "3")
+        val expected = Stream("[", "rdf:first", "1", ";", "rdf:rest", "[", "rdf:first", "(", "2", ")", ";", "rdf:rest",
+          "[", "rdf:first", "3", ";", "rdf:rest", "rdf:nil", "]", "]", "]")
+        val actual = unmarshaller invokePrivate convertCollectionToBlankNodes(entities)
+        actual must be equalTo expected
+      }
+
+      "convert a turtle statement about a collection into the blank node equivilent" in new ConvertCollectionScope {
+        val entities = Stream("<resource>", "foaf:name", "(", "\"Tom Riddle\"", "\"Voldemort\"", ")", ".")
+        unmarshaller invokePrivate expandCollections(entities) must be equalTo Stream("<resource>", "foaf:name",
+          "[", "rdf:first", "\"Tom Riddle\"", ";", "rdf:rest", "[", "rdf:first", "\"Voldemort\"", ";", "rdf:rest",
+        "rdf:nil", "]", "]", ".")
+      }
     }
 
     "extract uris" in {
@@ -311,7 +335,7 @@ class RdrrTurtleUnmarshallerSpec extends Specification with PrivateMethodTester 
 }
 
 trait RdrrTurtleUnmarshallerScope extends Scope with TestHelpers {
-  val unmarshaller = RdrrTurtleUnmarshaller
+  val unmarshaller = new RdrrTurtleUnmarshaller
 }
 
 trait IriExtractScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
@@ -336,6 +360,11 @@ trait PartitionBlankNodeScopeScope extends RdrrTurtleUnmarshallerScope with Priv
 
 trait ConvertCollectionScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
   val convertCollectionToBlankNodes = PrivateMethod[Stream[String]]('convertCollectionToBlankNodes)
+  val expandCollections = PrivateMethod[Stream[String]]('expandCollections)
+}
+
+trait ExpandBlankNodeScope extends RdrrTurtleUnmarshallerScope with PrivateMethodTester {
+  val expandBlankNodes = PrivateMethod[Stream[String]]('expandBlankNodes)
 }
 
 

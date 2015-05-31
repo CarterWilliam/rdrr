@@ -59,13 +59,13 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       }
     }
 
-    "a turtle graph with labeled blank nodes" in new Scope with TestHelpers {
+    "a turtle graph with labeled blank nodes" in new RdrrTurtleUnmarshallerScope {
       val blankNodeTurtle = """
           |@prefix foaf: <http://xmlns.com/foaf/0.1/> .
           |_:alice foaf:knows _:bob .
           |_:bob foaf:knows _:alice .
         """.stripMargin
-      val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
+      val graph = unmarshaller.fromTurtle(blankNodeTurtle)
 
       graph must containTheSameElementsAs {
         Graph (
@@ -75,10 +75,10 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       }
     }
 
-    "a turtle graph with unlabeled blank nodes" in new Scope with TestHelpers {
+    "a turtle graph with unlabeled blank nodes" in new RdrrTurtleUnmarshallerScope {
       val blankNodeTurtle =
         """[] <http://xmlns.com/foaf/0.1/knows> [] . """
-      val graph = RdrrTurtleUnmarshaller.fromTurtle(blankNodeTurtle)
+      val graph = unmarshaller.fromTurtle(blankNodeTurtle)
       graph must be equalTo Graph {
         Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2"))
       }
@@ -114,7 +114,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       "within nested triples" in new RdrrTurtleUnmarshallerScope {
         val doublyNestedBlankNodes = getResource("complex-anonymous-nested-blank-nodes.ttl")
-        val graph = RdrrTurtleUnmarshaller.fromTurtle(doublyNestedBlankNodes)
+        val graph = unmarshaller.fromTurtle(doublyNestedBlankNodes)
         graph must containTheSameElementsAs {
           Graph(
             Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Alice")),

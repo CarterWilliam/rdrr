@@ -1,18 +1,17 @@
 package rdrr.immutable.marshallers
 
 import rdrr.immutable._
+
 import scala.io.Source
 
-object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
-
-  val RdfStandardPrefixes = Seq(RdfOntology.prefix)
-  val RdfStandard: Map[String, String] = Map("a" -> RdfOntology.`type`.uri, "()" -> RdfOntology.nil.uri)
+class RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
   override def fromTurtle(turtle: String): Graph = fromTurtle(Source.fromString(turtle).getLines().toStream)
 
   private def fromTurtle(lines: Stream[String]) = {
     val entities = entitiesFromLines(lines)
-    Graph(triplesFromEntities(entities))
+    val entitiesWithCollectionsExpanded = expandCollections(entities)
+    Graph(triplesFromEntities(entitiesWithCollectionsExpanded))
   }
 
   val EmptyLine = """^\s*$""".r
@@ -61,49 +60,32 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
     }
   }
 
-
-  case class ParserState(basePrefix: Option[BasePrefix] = None,
-                         prefixes: Seq[Prefix] = Nil,
-                         blankNodes: Seq[BlankNode] = Nil,
-                         partialTriple: PartialTriple = EmptyTriple) {
-
-    def withPrefix (prefix: RdfPrefix): ParserState = prefix match {
-      case basePrefix: BasePrefix =>
-        copy(basePrefix = Some(basePrefix))
-      case standardPrefix: Prefix =>
-        val updatePrefixes = prefixes.filter(_.prefix != standardPrefix.prefix) :+ standardPrefix
-        copy(prefixes = updatePrefixes)
-    }
-
-    def withPartial(partial: PartialTriple) = copy(partialTriple = partial)
-
-    def withNode(node: GraphNode) = node match {
-      case blankNode: BlankNode => copy(blankNodes = blankNode +:blankNodes)
-      case _ => this
-    }
-
-    def nextBlankNode: BlankNode = {
-
-      def iteration(n: Int): BlankNode = {
-        if (blankNodes contains BlankNode("blank-" + n))
-          iteration(n+1)
-        else
-          BlankNode("blank-" + n)
-      }
-
-      iteration(1)
-    }
-
+  private def expandCollections(entities: Stream[String]): Stream[String] = entities match {
+    case CollectionStart #:: more =>
+      val (collectionScope, mainScope) = partitionCollectionScope(more)
+      expandCollections { convertCollectionToBlankNodes(collectionScope) #::: mainScope }
+    case entity #:: more =>
+      entity #:: expandCollections(more)
+    case Stream.Empty => Stream.Empty
   }
 
-  object ParserState {
-    val Empty = ParserState(None, RdfStandardPrefixes, Nil, EmptyTriple)
-  }
+  val UnlabeledBlankNodeStart = "["
+  val UnlabeledBlankNodeEnd = "]"
+  private def expandBlankNodes(entities: Stream[String]): Stream[String] = entities match {
+    case UnlabeledBlankNodeStart #:: UnlabeledBlankNodeEnd #:: more =>
+      val newBlankNode = "_:blank-" + 1
+      newBlankNode #:: expandBlankNodes(more)
 
-  sealed abstract class PartialTriple
-  object EmptyTriple extends PartialTriple
-  case class Subject(subject: RdfResource) extends PartialTriple
-  case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
+    case UnlabeledBlankNodeStart #:: more =>
+      val newBlankNode = "_:blank-" + 1
+      val (blankNodeScope, mainScope) = partitionBlankNodeScope(more)
+      newBlankNode #:: expandBlankNodes { mainScope #::: newBlankNode #:: blankNodeScope :+ "." }
+
+    case entity #:: more =>
+      entity #:: expandBlankNodes(more)
+
+    case Stream.Empty => Stream.Empty
+  }
 
 
   val BasePrefixExtractor = """^(?:@base|BASE)\s+<(.*)>\s*\.?$""".r
@@ -169,11 +151,6 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
       case PrefixExtractor(prefix, uri) #:: rest =>
         triplesFromEntities(rest, parserState withPrefix Prefix(prefix, uri))
 
-      case CollectionStart #:: rest =>
-        val (collectionScope, mainScope) = partitionCollectionScope(rest)
-        val rewrittenEntities = convertCollectionToBlankNodes(collectionScope) #::: mainScope
-        triplesFromEntities(rewrittenEntities, parserState)
-
       case BlankNodeWithNestedTriplesStart #:: rest => {
         val newBlankNode = parserState.nextBlankNode
         val (nestedBlankNodeGraph, mainGraph) = partitionBlankNodeScope(rest)
@@ -235,7 +212,7 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
 
     turtleRepresentation match {
 
-      case rdfStandard if RdfStandard.contains(rdfStandard) => RdfStandard(rdfStandard)
+      case rdfStandard if RdfStandard.abrieviations.contains(rdfStandard) => RdfStandard.abrieviations(rdfStandard)
 
       case UriResource(uri) => uri
 
@@ -286,3 +263,51 @@ object RdrrTurtleUnmarshaller extends TurtleUnmarshaller {
   }
 
 }
+
+object RdfStandard {
+  val prefixes = Seq(RdfOntology.prefix)
+  val abrieviations: Map[String, String] = Map("a" -> RdfOntology.`type`.uri, "()" -> RdfOntology.nil.uri)
+}
+
+case class ParserState(basePrefix: Option[BasePrefix] = None,
+                       prefixes: Seq[Prefix] = Nil,
+                       blankNodes: Seq[BlankNode] = Nil,
+                       partialTriple: PartialTriple = EmptyTriple) {
+
+  def withPrefix(prefix: RdfPrefix): ParserState = prefix match {
+    case basePrefix: BasePrefix =>
+      copy(basePrefix = Some(basePrefix))
+    case standardPrefix: Prefix =>
+      val updatePrefixes = prefixes.filter(_.prefix != standardPrefix.prefix) :+ standardPrefix
+      copy(prefixes = updatePrefixes)
+  }
+
+  def withPartial(partial: PartialTriple) = copy(partialTriple = partial)
+
+  def withNode(node: GraphNode) = node match {
+    case blankNode: BlankNode => copy(blankNodes = blankNode +: blankNodes)
+    case _ => this
+  }
+
+  def nextBlankNode: BlankNode = {
+
+    def iteration(n: Int): BlankNode = {
+      if (blankNodes contains BlankNode("blank-" + n))
+        iteration(n + 1)
+      else
+        BlankNode("blank-" + n)
+    }
+
+    iteration(1)
+  }
+
+}
+
+object ParserState {
+  val Empty = ParserState(None, RdfStandard.prefixes, Nil, EmptyTriple)
+}
+
+sealed abstract class PartialTriple
+object EmptyTriple extends PartialTriple
+case class Subject(subject: RdfResource) extends PartialTriple
+case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
