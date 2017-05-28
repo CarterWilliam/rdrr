@@ -63,10 +63,10 @@ class GraphSpec extends Specification {
 
       "allow filtering of the triples by a partial functions that transform the data" in new GraphScope {
         val graph = Graph(JustinBieberIsAnArtist, JustinBieberHasAName, CatrionaKnowsJustin)
-        val TypePredicate = a
+        val TypeResource = a
 
         val typesKnownByCatriona = graph.collect {
-          case Triple(person, TypePredicate, personType) if graph.contains(Triple(Catriona, knows, person)) =>
+          case Triple(person, TypeResource, personType) if graph.contains(Triple(Catriona, knows, person)) =>
             personType.as[Resource].uri.split("/").last
         }
         typesKnownByCatriona.head must be equalTo "MusicArtist"
@@ -87,11 +87,11 @@ class GraphSpec extends Specification {
 
 trait GraphScope extends Scope {
   val JustinBieber = Resource("https://en.wikipedia.org/wiki/Justin_Bieber")
-  val a = Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+  val a = Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
   val Artist = Resource("http://purl.org/ontology/mo/MusicArtist")
-  val name = Predicate("http://xmlns.com/foaf/0.1/name")
+  val name = Resource("http://xmlns.com/foaf/0.1/name")
   val Catriona = Resource("https://en.wikipedia.org/wiki/Catriona")
-  val knows = Predicate("http://xmlns.com/foaf/spec/#term_knows")
+  val knows = Resource("http://xmlns.com/foaf/spec/#term_knows")
 
   val JustinBieberIsAnArtist = Triple(JustinBieber, a, Artist)
   val JustinBieberHasAName = Triple(JustinBieber, name, StandardStringLiteral("Justin Bieber"))

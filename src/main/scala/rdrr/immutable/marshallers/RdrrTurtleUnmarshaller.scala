@@ -170,7 +170,7 @@ class RdrrTurtleUnmarshaller extends TurtleUnmarshaller with RandomStrings {
           triplesFromEntities(rest, parserState withPartial Subject(subjectNode))
 
         case Subject(subject) =>
-          val subjectPredicatePartial = SubjectAndPredicate(subject, Predicate(iriFromTurtle(entity, parserState)))
+          val subjectPredicatePartial = SubjectAndPredicate(subject, Resource(iriFromTurtle(entity, parserState)))
           triplesFromEntities(rest, parserState withPartial subjectPredicatePartial)
 
         case SubjectAndPredicate(subject, predicate) => {
@@ -280,4 +280,4 @@ object ParserState {
 sealed abstract class PartialTriple
 object EmptyTriple extends PartialTriple
 case class Subject(subject: RdfResource) extends PartialTriple
-case class SubjectAndPredicate(subject: RdfResource, predicate: Predicate) extends PartialTriple
+case class SubjectAndPredicate(subject: RdfResource, predicate: Resource) extends PartialTriple

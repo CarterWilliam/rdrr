@@ -98,18 +98,18 @@ class DemonstrationSpec extends FunSpec with MustMatchers {
 
 
   object RdfOntology {
-    val `type` = Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    val `type` = Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
   }
 
   object SportOntology {
     val prefix = "http://www.bbc.co.uk/ontologies/sport/"
-    val competesIn = Predicate("http://www.bbc.co.uk/ontologies/sport/competesIn")
-    val hasHome = Predicate("http://www.bbc.co.uk/ontologies/sport/hasHome")
+    val competesIn = Resource("http://www.bbc.co.uk/ontologies/sport/competesIn")
+    val hasHome = Resource("http://www.bbc.co.uk/ontologies/sport/hasHome")
   }
 
   object CMSOntology {
     val prefix = "http://www.bbc.co.uk/ontologies/cms/"
-    val locator = Predicate("http://www.bbc.co.uk/ontologies/cms/locator")
+    val locator = Resource("http://www.bbc.co.uk/ontologies/cms/locator")
     val SportsStatsLocator = Resource("http://www.bbc.co.uk/ontologies/cms/Sports-StatsLocator")
     val CPSLocator = Resource("http://www.bbc.co.uk/ontologies/cms/CPSLocator")
   }

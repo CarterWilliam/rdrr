@@ -2,8 +2,6 @@ package rdrr.immutable.marshallers
 
 import rdrr.immutable._
 
-import scala.io.Source
-
 object RdrrTurtleMarshaller extends TurtleMarshaller {
 
   val RdfStandard: Map[String, String] =
@@ -62,8 +60,7 @@ object RdrrTurtleMarshaller extends TurtleMarshaller {
 
 
   private[this] def asTurtle(entity: RdfEntity): String = entity match {
-    case Resource(uri) => asUriTurtle(uri)
-    case Predicate(uri) => RdfStandard.getOrElse(uri, asUriTurtle(uri))
+    case Resource(uri) => RdfStandard.getOrElse(uri, asUriTurtle(uri))
     case BlankNode(label) => s"""_:$label"""
     case StandardStringLiteral(content) => asStandardStringLiteralTurtle(content)
     case NonStandardStringLiteral(string, datatype) => asNonStandardStringLiteralTurtle(string, datatype)

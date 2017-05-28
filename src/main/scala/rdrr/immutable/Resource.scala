@@ -14,17 +14,7 @@ case class Resource(uri: String) extends RdfResource
 object Resource {
   implicit def fromEntity(entity: RdfEntity): Resource = entity match {
     case resource: Resource => resource
-    case somethingElse => throw new WrongNodeTypeException(s"Expected a Resource Node but got $somethingElse")
-  }
-}
-
-
-case class Predicate(uri: String) extends RdfEntity
-
-object Predicate {
-  implicit def fromEntity(entity: RdfEntity): Predicate = entity match {
-    case predicate: Predicate => predicate
-    case somethingElse => throw new WrongNodeTypeException(s"Expected a Predicate Node but got $somethingElse")
+    case somethingElse => throw WrongNodeTypeException(s"Expected a Resource Node but got $somethingElse")
   }
 }
 
@@ -37,7 +27,7 @@ abstract class Literal extends GraphNode {
 object Literal {
   implicit def fromEntity(entity: RdfEntity): Literal = entity match {
     case literal: Literal => literal
-    case somethingElse => throw new WrongNodeTypeException(s"Expected a Literal Node but got $somethingElse")
+    case somethingElse => throw WrongNodeTypeException(s"Expected a Literal Node but got $somethingElse")
   }
 }
 
@@ -74,6 +64,6 @@ case class BlankNode(label: String) extends RdfResource
 object BlankNode {
   implicit def fromEntity(entity: RdfEntity): BlankNode = entity match {
     case blankNode: BlankNode => blankNode
-    case somethingElse => throw new WrongNodeTypeException(s"Expected a Blank Node but got $somethingElse")
+    case somethingElse => throw WrongNodeTypeException(s"Expected a Blank Node but got $somethingElse")
   }
 }

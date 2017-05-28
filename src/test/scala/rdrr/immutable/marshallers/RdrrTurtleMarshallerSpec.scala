@@ -16,12 +16,12 @@ class RdrrTurtleMarshallerSpec extends Specification {
     }
 
     "serialise predicates to turtle" in new RdrrTurtleMarshallerScope {
-      val predicate = Predicate("http://ontologies.com/ontology/predicate")
-      marshaller invokePrivate asTurtle(predicate) must be equalTo "<http://ontologies.com/ontology/predicate>"
+      val predicate = Resource("http://ontologies.com/ontology/Resource")
+      marshaller invokePrivate asTurtle(predicate) must be equalTo "<http://ontologies.com/ontology/Resource>"
     }
 
-    "serialise the RDF standard 'type' predicate to 'a'" in new RdrrTurtleMarshallerScope {
-      val predicate = Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    "serialise the RDF standard 'type' Resource to 'a'" in new RdrrTurtleMarshallerScope {
+      val predicate = Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
       marshaller invokePrivate asTurtle(predicate) must be equalTo "a"
     }
 
@@ -68,7 +68,7 @@ class RdrrTurtleMarshallerSpec extends Specification {
     "serialise a simple graph to Turtle" in new RdrrTurtleMarshallerScope {
       val graph = Graph(Triple(
         Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-        Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
         Resource("http://purl.org/ontology/mo/MusicArtist") ) )
       val expected = "<https://en.wikipedia.org/wiki/Justin_Bieber> a <http://purl.org/ontology/mo/MusicArtist> ."
 
@@ -79,15 +79,15 @@ class RdrrTurtleMarshallerSpec extends Specification {
       val graph = Graph (
 
         Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
           Resource("http://purl.org/ontology/mo/MusicArtist") ),
 
         Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
           Resource("http://xmlns.com/foaf/0.1/Person") ),
 
         Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-          Predicate("http://xmlns.com/foaf/0.1/name"),
+          Resource("http://xmlns.com/foaf/0.1/name"),
           StandardStringLiteral("Justin Bieber") ) )
 
       val expected =
@@ -103,7 +103,7 @@ class RdrrTurtleMarshallerSpec extends Specification {
     "correctly output labeled blank nodes" in new RdrrTurtleMarshallerScope {
       val graph = Graph(Triple(
         subject = BlankNode("some_num"),
-        predicate = Predicate("http://maths.org/greaterThan"),
+        predicate = Resource("http://maths.org/greaterThan"),
         `object` = Resource("http://maths.org/Aleph0") ) )
 
       val expected = """_:some_num <http://maths.org/greaterThan> <http://maths.org/Aleph0> ."""

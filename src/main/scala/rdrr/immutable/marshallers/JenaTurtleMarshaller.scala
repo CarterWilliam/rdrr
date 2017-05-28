@@ -21,7 +21,7 @@ object JenaTurtleUnmarshaller extends TurtleUnmarshaller with JavaHelpers {
   private def tripleStreamFromJenaStatements(statementStream: Stream[JenaStatement]): Stream[Triple] = statementStream match {
     case statement #:: others => {
       val subject = resourceFromJena(statement.getSubject)
-      val predicate = Predicate(statement.getPredicate.getURI)
+      val predicate = Resource(statement.getPredicate.getURI)
       val `object` = objectFromJena(statement.getObject)
       Triple(subject, predicate, `object`) #:: tripleStreamFromJenaStatements(others)
     }
@@ -53,9 +53,6 @@ object JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
       case resource: Resource => jenaModel.createResource(resource.uri)
       case blankNode: BlankNode => jenaModel.createResource(new AnonId(blankNode.label))
     }
-    implicit def predicateJenaConversion(predicate: Predicate): JenaProperty = {
-      jenaModel.createProperty(predicate.uri)
-    }
 
     implicit def nodeJenaConversion(node: GraphNode): JenaNode = node match {
       case resource: Resource => resourceJenaConversion(resource)
@@ -64,7 +61,7 @@ object JenaTurtleMarshaller extends TurtleMarshaller with JavaHelpers {
 
     closeWhenDone(new StringWriter) { out =>
       graph.foreach { triple =>
-        jenaModel.add(triple.subject, triple.predicate, triple.`object`)
+        jenaModel.add(triple.subject, jenaModel.createProperty(triple.predicate.uri), triple.`object`)
       }
       jenaModel.write(out, "TTL")
       out.toString

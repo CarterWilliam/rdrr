@@ -20,7 +20,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       graph must be equalTo Graph(
         Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
           Resource("http://purl.org/ontology/mo/MusicArtist")) )
     }
 
@@ -35,7 +35,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       graph must be equalTo Graph(
         Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-          Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+          Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
           Resource("http://purl.org/ontology/mo/MusicArtist")) )
     }
 
@@ -51,10 +51,10 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       graph must containTheSameElementsAs{
         Graph(
           Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-            Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
             Resource("http://purl.org/ontology/mo/SoloMusicArtist")),
           Triple(Resource("https://en.wikipedia.org/wiki/Justin_Bieber"),
-            Predicate("http://xmlns.com/foaf/0.1/name"), LanguageStringLiteral("Justin Bieber", "en"))
+            Resource("http://xmlns.com/foaf/0.1/name"), LanguageStringLiteral("Justin Bieber", "en"))
         )
       }
     }
@@ -69,8 +69,8 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       graph must containTheSameElementsAs {
         Graph (
-          Triple(BlankNode("alice"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("bob")),
-          Triple(BlankNode("bob"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("alice"))
+          Triple(BlankNode("alice"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("bob")),
+          Triple(BlankNode("bob"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("alice"))
         )
       }
     }
@@ -80,7 +80,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         """[] <http://xmlns.com/foaf/0.1/knows> [] . """
       val graph = unmarshaller.fromTurtle(blankNodeTurtle)
       graph must be equalTo Graph {
-        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2"))
+        Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2"))
       }
     }
 
@@ -94,8 +94,8 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         val graph = unmarshaller.fromTurtle(bobKnowsSomeone)
 
         graph must be equalTo Graph(
-          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
-          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
+          Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
         )
       }
 
@@ -107,8 +107,8 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         val graph = unmarshaller.fromTurtle(someoneKnowsBob)
 
         graph must be equalTo Graph(
-          Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
-          Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
+          Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-2"), Resource("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob"))
         )
       }
 
@@ -117,12 +117,12 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
         val graph = unmarshaller.fromTurtle(doublyNestedBlankNodes)
         graph must containTheSameElementsAs {
           Graph(
-            Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Alice")),
-            Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
-            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
-            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/mbox"), Resource("bob:example.com")),
-            Triple(BlankNode("blank-2"), Predicate("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-3")),
-            Triple(BlankNode("blank-3"), Predicate("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Eve"))
+            Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Alice")),
+            Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-2")),
+            Triple(BlankNode("blank-2"), Resource("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Bob")),
+            Triple(BlankNode("blank-2"), Resource("http://xmlns.com/foaf/0.1/mbox"), Resource("bob:example.com")),
+            Triple(BlankNode("blank-2"), Resource("http://xmlns.com/foaf/0.1/knows"), BlankNode("blank-3")),
+            Triple(BlankNode("blank-3"), Resource("http://xmlns.com/foaf/0.1/name"), StandardStringLiteral("Eve"))
           )
         }
       }
@@ -137,7 +137,7 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
       graph must be equalTo Graph (
-        Triple(BlankNode("blank-1"), Predicate("http://xmlns.com/foaf/0.1/knows"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+        Triple(BlankNode("blank-1"), Resource("http://xmlns.com/foaf/0.1/knows"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
       )
     }
 
@@ -150,11 +150,11 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
 
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
       graph must be equalTo Graph (
-        Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
-        Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
-        Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
-        Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
-        Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+        Triple(Resource("http://example.org/stuff/1.0/a"), Resource("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+        Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+        Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+        Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
+        Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
       )
     }
 
@@ -168,16 +168,16 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
       graph must containTheSameElementsAs {
         Graph(
-          Triple(Resource("http://example.org/stuff/1.0/a"), Predicate("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
-          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
-          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
-          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
-          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+          Triple(Resource("http://example.org/stuff/1.0/a"), Resource("http://example.org/stuff/1.0/b"), BlankNode("blank-1")),
+          Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("apple")),
+          Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
+          Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
 
-          Triple(BlankNode("blank-3"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
-          Triple(BlankNode("blank-3"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-4")),
-          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("clementine")),
-          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
+          Triple(BlankNode("blank-3"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("banana")),
+          Triple(BlankNode("blank-3"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-4")),
+          Triple(BlankNode("blank-4"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), StandardStringLiteral("clementine")),
+          Triple(BlankNode("blank-4"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"))
         )
       }
     }
@@ -192,21 +192,21 @@ class RdrrTurtleUnmarshallerAcceptanceSpec extends Specification {
       val graph = unmarshaller.fromTurtle(someoneKnowsZero)
       graph must containTheSameElementsAs {
         Graph(
-          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), IntegerLiteral(1)),
-          Triple(BlankNode("blank-1"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
+          Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), IntegerLiteral(1)),
+          Triple(BlankNode("blank-1"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-2")),
 
-          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
-          Triple(BlankNode("blank-2"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-4")),
+          Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-3")),
+          Triple(BlankNode("blank-2"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), BlankNode("blank-4")),
 
-          Triple(BlankNode("blank-3"), Predicate("http://example.org/stuff/1.0/p"), Resource("http://example.org/stuff/1.0/q")),
+          Triple(BlankNode("blank-3"), Resource("http://example.org/stuff/1.0/p"), Resource("http://example.org/stuff/1.0/q")),
 
-          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-5")),
-          Triple(BlankNode("blank-4"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+          Triple(BlankNode("blank-4"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), BlankNode("blank-5")),
+          Triple(BlankNode("blank-4"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
 
-          Triple(BlankNode("blank-5"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), IntegerLiteral(2)),
-          Triple(BlankNode("blank-5"), Predicate("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
+          Triple(BlankNode("blank-5"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"), IntegerLiteral(2)),
+          Triple(BlankNode("blank-5"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"), Resource("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")),
 
-          Triple(BlankNode("blank-1"), Predicate("http://example.org/stuff/1.0/p2"), Resource("http://example.org/stuff/1.0/q2"))
+          Triple(BlankNode("blank-1"), Resource("http://example.org/stuff/1.0/p2"), Resource("http://example.org/stuff/1.0/q2"))
         )
       }
     }
